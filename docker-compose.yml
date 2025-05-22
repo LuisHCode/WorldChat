@@ -1,0 +1,59 @@
+networks:
+  dto-red:
+    ipam:
+      driver: default
+      config:
+        - subnet: "192.168.0.0/24"
+
+services:
+  wcdb:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    container_name: sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourStrong!Passw0rd
+      
+    ports:
+      - 3307:3306
+    volumes:
+      - ./mysql:/var/lib/mysql
+      - ./db_dump:/docker-entrypoint-initdb.d
+    networks:
+      dto-red:
+        ipv4_address: "192.168.0.10"
+        
+  wcwebdatos:
+    container_name: web_datos
+    volumes:
+      - ./datos/src:/var/www/html/src
+      - ./datos/public:/var/www/html/public
+    build:
+      context: .
+      dockerfile: ./datos/Dockerfile
+    ports:
+      - 8000:80
+    depends_on:
+      - wcdb
+    networks:
+      dto-red:
+        ipv4_address: "192.168.0.12"
+
+  wcwebnegocio:
+    container_name: web_negocio
+    volumes:
+      - ./negocio/src:/var/www/html/src
+      - ./negocio/public:/var/www/html/public
+    build:
+      context: .
+      dockerfile: ./negocio/Dockerfile
+    ports:
+      - 9000:80
+    depends_on:
+      - wcwebdatos
+    networks:
+      dto-red:
+        ipv4_address: "192.168.0.13"
+secrets:
+  db_password:
+    file: ./db_password.txt
+    
