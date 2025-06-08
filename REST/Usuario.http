@@ -1,0 +1,19 @@
+@uriUsuario = http://localhost:8000/api/usuario
+GET {{uriUsuario}}/read
+Content-Type: application/json
+
+
+###
+
+POST {{uriUsuario}}
+Content-Type: application/json
+
+{
+  "nombre_usuario": "Steve-o",
+  "nombre_completo": "Steven Guzman Alvarado",
+  "telefono": "1235678",
+  "correo": "steveoooo@gmail.com",
+  "contrasenna": "steve123",
+  "foto_perfil": "",
+  "estado": "Viva overwatch y cod"
+}
