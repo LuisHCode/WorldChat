@@ -23,7 +23,7 @@ services:
         ipv4_address: "192.168.0.10"
         
   wcwebdatos:
-    container_name: web_datos
+    container_name: wcweb_datos
     volumes:
       - ./datos/src:/var/www/html/src
       - ./datos/public:/var/www/html/public
@@ -39,7 +39,7 @@ services:
         ipv4_address: "192.168.0.12"
 
   wcwebnegocio:
-    container_name: web_negocio
+    container_name: wcweb_negocio
     volumes:
       - ./negocio/src:/var/www/html/src
       - ./negocio/public:/var/www/html/public

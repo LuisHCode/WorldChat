@@ -9,7 +9,7 @@ $container ->set('base_datos',function(ContainerInterface $c) {
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ
     ];
-    $dsn = "sqlsrv:Server=$conf->host;Database=$conf->db";
+    $dsn = "sqlsrv:Server=$conf->host;Database=$conf->db;Encrypt=yes;TrustServerCertificate=yes";
 
     try {
         $con = new PDO($dsn,$conf->usr,$conf->passw,$opc);
