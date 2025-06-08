@@ -17,3 +17,18 @@ Content-Type: application/json
   "foto_perfil": "",
   "estado": "Viva overwatch y cod"
 }
+
+###
+
+PUT {{uriUsuario}}/2
+Content-Type: application/json
+
+{
+  "nombre_usuario": "",
+  "nombre_completo": "",
+  "telefono": "87437865",
+  "correo": "",
+  "contrasenna": "",
+  "foto_perfil": "",
+  "estado": ""
+}

@@ -11,7 +11,6 @@ $app->get('/', function (Request $request, Response $response, $args) {
 });
 
 $app->group('/api', function (RouteCollectorProxy $api) {
-
     $api->group('/usuario', function (RouteCollectorProxy $endpoint) {
         $endpoint->get('/read[/{id}]', Usuario::class . ':read');
         $endpoint->post('', Usuario::class . ':create');
