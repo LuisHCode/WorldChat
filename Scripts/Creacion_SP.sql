@@ -238,34 +238,42 @@ END;
 GO
 
 
-CREATE PROCEDURE sp_ObtenerMensajesPrivados
+CREATE OR ALTER PROCEDURE sp_ObtenerMensajesPrivados
     @id_usuario1 INT,
-    @id_usuario2 INT,
-    @clave NVARCHAR(100) -- clave de cifrado
+    @id_usuario2 INT
 AS
 BEGIN
     BEGIN TRY
+        OPEN SYMMETRIC KEY ClaveSimetrica
+            DECRYPTION BY CERTIFICATE MiCertificadoConClave;
+
         IF NOT EXISTS (SELECT 1 FROM Usuario WHERE id_usuario = @id_usuario1)
             THROW 50022, 'El usuario 1 no existe.', 1;
+
         IF NOT EXISTS (SELECT 1 FROM Usuario WHERE id_usuario = @id_usuario2)
             THROW 50023, 'El usuario 2 no existe.', 1;
 
         SELECT 
             m.id_mensaje,
             u.nombre_usuario AS emisor,
-            CONVERT(NVARCHAR(MAX), DecryptByPassPhrase(@clave, m.contenido)) AS contenido_descifrado,
+            CONVERT(VARCHAR(MAX), DecryptByKey(m.contenido)) AS contenido,
             m.fecha_envio,
             m.estado_envio
         FROM Mensaje m
         INNER JOIN Usuario u ON m.id_emisor = u.id_usuario
         WHERE (m.id_emisor = @id_usuario1 AND m.id_receptor = @id_usuario2)
            OR (m.id_emisor = @id_usuario2 AND m.id_receptor = @id_usuario1)
-        ORDER BY m.fecha_envio ASC
+        ORDER BY m.fecha_envio ASC;
+
+        CLOSE SYMMETRIC KEY ClaveSimetrica;
     END TRY
     BEGIN CATCH
-        PRINT ERROR_MESSAGE()
+            CLOSE SYMMETRIC KEY ClaveSimetrica;
+        THROW;
     END CATCH
 END;
+GO
+
 
 GO
 

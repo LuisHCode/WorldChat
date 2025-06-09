@@ -83,41 +83,42 @@ class Mensaje
         return $response->withStatus($status)->withHeader('Content-Type', 'application/json');
     }
 
-public function read(Request $request, Response $response, $args)
-{
-    $sql = "
-        OPEN SYMMETRIC KEY ClaveSimetrica
-        DECRYPTION BY CERTIFICATE MiCertificadoConClave;
+    public function readPrivate(Request $request, Response $response, $args)
+    {
+        $body = json_decode($request->getBody(), true);
 
-        SELECT 
-            id_mensaje,
-            id_emisor,
-            id_receptor,
-            [id_chat],
-            CONVERT(VARCHAR(MAX), DecryptByKey(contenido)) AS contenido,
-            fecha_envio,
-            estado_envio
-        FROM Mensaje;
+        foreach ($body as $k => $v) {
+            if (is_string($v) && trim($v) === "") {
+                $body[$k] = null;
+            }
+        }
+        $sql = "EXEC sp_ObtenerMensajesPrivados @id_usuario1 = :id_usuario1, @id_usuario2 = :id_usuario2";
+        $con = $this->container->get('base_datos');
+        $con->beginTransaction();
+        $query = $con->prepare($sql);
 
-        CLOSE SYMMETRIC KEY ClaveSimetrica;
-    ";
+        $query->bindValue(':id_usuario1', $body['id_usuario1'] ?? null, PDO::PARAM_INT);
+        $query->bindValue(':id_usuario2', $body['id_usuario2'] ?? null, PDO::PARAM_INT);
+        $query->execute();
+        $res = $query->fetchAll(PDO::FETCH_ASSOC);
+        var_dump($res);
+        die();
+        try {
+            $query->execute();
+            $con->commit();
+            $status = 201;
+        } catch (\PDOException $e) {
+            $status = 500;
+            $con->rollBack();
+        }
+        $query = null;
+        $con = null;
 
-    $con = $this->container->get('base_datos');
-    $query = $con->prepare($sql);
-
-    $query->execute();
-    $res = $query->fetchAll(PDO::FETCH_ASSOC);
-
-    $status = isset($res) && count($res) > 0 ? 200 : 204;
-
-    $query = null;
-    $con = null;
-
-    $response->getBody()->write(json_encode($res ?? [], JSON_UNESCAPED_UNICODE));
-    return $response
-        ->withHeader('Content-Type', 'application/json')
-        ->withStatus($status);
-}
+        $response->getBody()->write(json_encode($res ?? [], JSON_UNESCAPED_UNICODE));
+        return $response
+            ->withHeader('Content-Type', 'application/json')
+            ->withStatus($status);
+    }
 
 
     public function update(Request $request, Response $response, $args)
