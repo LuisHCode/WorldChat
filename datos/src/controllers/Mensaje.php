@@ -93,6 +93,7 @@ public function read(Request $request, Response $response, $args)
             id_mensaje,
             id_emisor,
             id_receptor,
+            [id_chat],
             CONVERT(VARCHAR(MAX), DecryptByKey(contenido)) AS contenido,
             fecha_envio,
             estado_envio
