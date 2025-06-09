@@ -101,8 +101,6 @@ class Mensaje
         $query->bindValue(':id_usuario2', $body['id_usuario2'] ?? null, PDO::PARAM_INT);
         $query->execute();
         $res = $query->fetchAll(PDO::FETCH_ASSOC);
-        var_dump($res);
-        die();
         try {
             $query->execute();
             $con->commit();

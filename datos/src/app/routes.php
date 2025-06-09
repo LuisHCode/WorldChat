@@ -26,6 +26,10 @@ $app->group('/api', function (RouteCollectorProxy $api) {
         $endpoint->get('/filtrar/{pag}/{lim}', Mensaje::class . ':filtrar');
     });
 
+     $api->group('/chat', function (RouteCollectorProxy $endpoint) {
+        $endpoint->POST('', Chat::class . ':create');
+    });
+
 });
 
 $app->get('/test-db', function (Request $request, Response $response, $args) {

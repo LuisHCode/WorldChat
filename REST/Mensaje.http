@@ -1,4 +1,5 @@
 @uriMensaje = http://localhost:8000/api/mensaje
+@uriChat = http://localhost:8000/api/chat
 
 POST {{uriMensaje}}/3
 Content-Type: application/json
@@ -13,6 +14,16 @@ GET {{uriMensaje}}/read
 Content-Type: application/json
 
 {
-  "id_usuario1": 2,
-  "id_usuario2": 3
+  "id_usuario1":1,
+  "id_usuario2": 2
+}
+
+
+###
+POST {{uriChat}}
+Content-Type: application/json
+
+{
+  "nombre_chat": "CDAC",
+  "id_creador": 3
 }
