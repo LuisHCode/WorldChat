@@ -10,6 +10,15 @@ Content-Type: application/json
 }
 
 ###
+POST {{uriMensaje}}/group/9
+Content-Type: application/json
+
+{
+  "id_emisor": 2,
+  "contenido": "prueba de mensaje privado"
+}
+
+###
 GET {{uriMensaje}}/read
 Content-Type: application/json
 
