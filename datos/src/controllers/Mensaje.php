@@ -83,6 +83,41 @@ class Mensaje
         return $response->withStatus($status)->withHeader('Content-Type', 'application/json');
     }
 
+public function read(Request $request, Response $response, $args)
+{
+    $sql = "
+        OPEN SYMMETRIC KEY ClaveSimetrica
+        DECRYPTION BY CERTIFICATE MiCertificadoConClave;
+
+        SELECT 
+            id_mensaje,
+            id_emisor,
+            id_receptor,
+            CONVERT(VARCHAR(MAX), DecryptByKey(contenido)) AS contenido,
+            fecha_envio,
+            estado_envio
+        FROM Mensaje;
+
+        CLOSE SYMMETRIC KEY ClaveSimetrica;
+    ";
+
+    $con = $this->container->get('base_datos');
+    $query = $con->prepare($sql);
+
+    $query->execute();
+    $res = $query->fetchAll(PDO::FETCH_ASSOC);
+
+    $status = isset($res) && count($res) > 0 ? 200 : 204;
+
+    $query = null;
+    $con = null;
+
+    $response->getBody()->write(json_encode($res ?? [], JSON_UNESCAPED_UNICODE));
+    return $response
+        ->withHeader('Content-Type', 'application/json')
+        ->withStatus($status);
+}
+
 
     public function update(Request $request, Response $response, $args)
     {

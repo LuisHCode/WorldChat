@@ -7,3 +7,7 @@ Content-Type: application/json
   "id_emisor": 2,
   "contenido": "Hola, ¿cómo estás?"
 }
+
+###
+GET {{uriMensaje}}/read
+Content-Type: application/json
