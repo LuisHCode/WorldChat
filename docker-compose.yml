@@ -11,7 +11,6 @@ services:
     container_name: sqlserver
     environment:
       - ACCEPT_EULA=Y
-      - SA_PASSWORD=YourStrong!Passw0rd
       
     ports:
       - 3307:3306
@@ -53,7 +52,4 @@ services:
     networks:
       dto-red:
         ipv4_address: "192.168.0.13"
-secrets:
-  db_password:
-    file: ./db_password.txt
     
