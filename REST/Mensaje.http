@@ -1,13 +1,18 @@
 @uriMensaje = http://localhost:8000/api/mensaje
 
-POST {{uriMensaje}}/1
+POST {{uriMensaje}}/3
 Content-Type: application/json
 
 {
   "id_emisor": 2,
-  "contenido": "Hola, ¿cómo estás?"
+  "contenido": "prueba de mensaje privado"
 }
 
 ###
 GET {{uriMensaje}}/read
 Content-Type: application/json
+
+{
+  "id_usuario1": 2,
+  "id_usuario2": 3
+}

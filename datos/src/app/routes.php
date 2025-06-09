@@ -20,7 +20,7 @@ $app->group('/api', function (RouteCollectorProxy $api) {
     });
 
     $api->group('/mensaje', function (RouteCollectorProxy $endpoint) {
-        $endpoint->get('/read', Mensaje::class . ':read');
+        $endpoint->get('/read', Mensaje::class . ':readPrivate');
         $endpoint->post('/{id_receptor}', Mensaje::class . ':sendPrivateMessage');
         $endpoint->delete('/{id}', Mensaje::class . ':delete');
         $endpoint->get('/filtrar/{pag}/{lim}', Mensaje::class . ':filtrar');
