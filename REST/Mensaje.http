@@ -1,0 +1,9 @@
+@uriMensaje = http://localhost:8000/api/mensaje
+
+POST {{uriMensaje}}/1
+Content-Type: application/json
+
+{
+  "id_emisor": 2,
+  "contenido": "Hola, ¿cómo estás?"
+}

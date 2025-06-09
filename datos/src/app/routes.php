@@ -12,11 +12,18 @@ $app->get('/', function (Request $request, Response $response, $args) {
 
 $app->group('/api', function (RouteCollectorProxy $api) {
     $api->group('/usuario', function (RouteCollectorProxy $endpoint) {
-        $endpoint->get('/read[/{id}]', Usuario::class . ':read');
+        $endpoint->get('/read', Usuario::class . ':read');
         $endpoint->post('', Usuario::class . ':create');
         $endpoint->put('/{id}', Usuario::class . ':update');
         $endpoint->delete('/{id}', Usuario::class . ':delete');
         $endpoint->get('/filtrar/{pag}/{lim}', Usuario::class . ':filtrar');
+    });
+
+    $api->group('/mensaje', function (RouteCollectorProxy $endpoint) {
+        $endpoint->get('/read[/{id}]', Mensaje::class . ':read');
+        $endpoint->post('/{id_receptor}', Mensaje::class . ':sendPrivateMessage');
+        $endpoint->delete('/{id}', Mensaje::class . ':delete');
+        $endpoint->get('/filtrar/{pag}/{lim}', Mensaje::class . ':filtrar');
     });
 
 });

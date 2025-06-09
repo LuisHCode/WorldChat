@@ -10,18 +10,18 @@ AS
 BEGIN
     BEGIN TRY
         IF EXISTS (SELECT 1 FROM Usuario WHERE nombre_usuario = @nombre_usuario)
-            THROW 50001, 'El nombre de usuario ya está en uso.', 1;
+            THROW 50001, 'El nombre de usuario ya estï¿½ en uso.', 1;
 
         IF EXISTS (SELECT 1 FROM Usuario WHERE correo = @correo)
-            THROW 50002, 'El correo ya está registrado.', 1;
+            THROW 50002, 'El correo ya estï¿½ registrado.', 1;
 
         IF EXISTS (SELECT 1 FROM Usuario WHERE telefono = @telefono)
-            THROW 50003, 'El número de teléfono ya está registrado.', 1;
+            THROW 50003, 'El nï¿½mero de telï¿½fono ya estï¿½ registrado.', 1;
 
-        -- Variable para el hash de la contraseña
+        -- Variable para el hash de la contraseï¿½a
         DECLARE @contrasenna_hash VARBINARY(MAX);
 
-        -- Hashear la contraseña usando SHA2_256
+        -- Hashear la contraseï¿½a usando SHA2_256
         SET @contrasenna_hash = HASHBYTES('SHA2_256', @contrasenna);
 
         -- Insertar el usuario con el hash
@@ -51,17 +51,17 @@ BEGIN
         IF NOT EXISTS (SELECT 1 FROM Usuario WHERE id_usuario = @id_usuario)
             THROW 50004, 'Usuario no encontrado.', 1;
 
-        -- Validar unicidad si cambian campos únicos
+        -- Validar unicidad si cambian campos ï¿½nicos
         IF @nombre_usuario IS NOT NULL AND EXISTS (SELECT 1 FROM Usuario WHERE nombre_usuario = @nombre_usuario AND id_usuario <> @id_usuario)
-            THROW 50001, 'El nombre de usuario ya está en uso.', 1;
+            THROW 50001, 'El nombre de usuario ya estï¿½ en uso.', 1;
 
         IF @correo IS NOT NULL AND EXISTS (SELECT 1 FROM Usuario WHERE correo = @correo AND id_usuario <> @id_usuario)
-            THROW 50002, 'El correo ya está registrado.', 1;
+            THROW 50002, 'El correo ya estï¿½ registrado.', 1;
 
         IF @telefono IS NOT NULL AND EXISTS (SELECT 1 FROM Usuario WHERE telefono = @telefono AND id_usuario <> @id_usuario)
-            THROW 50003, 'El número de teléfono ya está registrado.', 1;
+            THROW 50003, 'El nï¿½mero de telï¿½fono ya estï¿½ registrado.', 1;
 
-        -- Variable para hash contraseña si se actualiza
+        -- Variable para hash contraseï¿½a si se actualiza
         DECLARE @contrasenna_hash VARBINARY(MAX) = NULL;
         IF @contrasenna IS NOT NULL
             SET @contrasenna_hash = HASHBYTES('SHA2_256', @contrasenna);
@@ -136,6 +136,39 @@ BEGIN
         PRINT ERROR_MESSAGE()
     END CATCH
 END;
+
+GO
+CREATE OR ALTER PROCEDURE sp_EnviarMensajePrivado
+    @id_emisor INT,
+    @id_receptor INT,
+    @contenido VARCHAR(MAX)
+AS
+BEGIN
+    BEGIN TRY
+        IF NOT EXISTS (SELECT 1 FROM Usuario WHERE id_usuario = @id_emisor)
+            THROW 50010, 'Emisor no encontrado.', 1;
+
+        IF NOT EXISTS (SELECT 1 FROM Usuario WHERE id_usuario = @id_receptor)
+            THROW 50011, 'Receptor no encontrado.', 1;
+
+        OPEN SYMMETRIC KEY ClaveSimetrica
+            DECRYPTION BY CERTIFICATE MiCertificadoConClave;
+
+        DECLARE @contenido_encriptado VARBINARY(MAX) = 
+            EncryptByKey(Key_GUID('ClaveSimetrica'), CONVERT(VARBINARY(MAX), @contenido));
+
+        INSERT INTO Mensaje (id_emisor, id_receptor, contenido, fecha_envio, estado_envio)
+        VALUES (@id_emisor, @id_receptor, @contenido_encriptado, GETDATE(), 'Enviado');
+
+        CLOSE SYMMETRIC KEY ClaveSimetrica;
+
+        SELECT 1 AS exito;
+    END TRY
+    BEGIN CATCH
+        SELECT 0 AS exito;
+    END CATCH
+END;
+
 
 GO
 

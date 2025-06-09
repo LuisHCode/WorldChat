@@ -1,7 +1,7 @@
 @uriUsuario = http://localhost:8000/api/usuario
+
 GET {{uriUsuario}}/read
 Content-Type: application/json
-
 
 ###
 
@@ -9,24 +9,24 @@ POST {{uriUsuario}}
 Content-Type: application/json
 
 {
-  "nombre_usuario": "Steve-o",
-  "nombre_completo": "Steven Guzman Alvarado",
-  "telefono": "1235678",
-  "correo": "steveoooo@gmail.com",
-  "contrasenna": "steve123",
+  "nombre_usuario": "Luisini",
+  "nombre_completo": "Luis Lopez Hernandez",
+  "telefono": "727521812",
+  "correo": "luisihi@gmail.com",
+  "contrasenna": "luis123",
   "foto_perfil": "",
-  "estado": "Viva overwatch y cod"
+  "estado": "q"
 }
 
 ###
 
-PUT {{uriUsuario}}/2
+PUT {{uriUsuario}}/1
 Content-Type: application/json
 
 {
   "nombre_usuario": "",
   "nombre_completo": "",
-  "telefono": "87437865",
+  "telefono": "43232412",
   "correo": "",
   "contrasenna": "",
   "foto_perfil": "",

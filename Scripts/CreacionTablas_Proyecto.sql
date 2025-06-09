@@ -15,12 +15,34 @@ GO
 USE ProyectoBD;
 GO
 
+-- Crear una clave maestra si no existe
+IF NOT EXISTS (SELECT * FROM sys.symmetric_keys WHERE name = 'ClaveSimetrica')
+BEGIN
+    CREATE MASTER KEY ENCRYPTION BY PASSWORD = 'clasime123';
+    
+    CREATE CERTIFICATE MiCertificadoConClave
+        WITH SUBJECT = 'Certificado para encriptar';
+
+    CREATE SYMMETRIC KEY ClaveSimetrica
+        WITH ALGORITHM = AES_256
+        ENCRYPTION BY CERTIFICATE MiCertificadoConClave;
+END;
+GO
+
+
 CREATE USER usuario FOR LOGIN usuario;
 GO
 
 ALTER ROLE db_datareader ADD MEMBER usuario;  -- Permiso lectura
 ALTER ROLE db_datawriter ADD MEMBER usuario;  -- Permiso escritura
-GRANT EXECUTE TO UsuarioNuevo;
+ALTER ROLE db_owner ADD MEMBER [usuario];
+GO
+GRANT EXECUTE TO usuario;
+-- Otorgar permiso para abrir la clave simétrica
+GRANT CONTROL ON SYMMETRIC KEY::ClaveSimetrica TO usuario;
+
+-- Otorgar permiso sobre el certificado (si es necesario)
+GRANT VIEW DEFINITION ON CERTIFICATE::MiCertificadoConClave TO usuario;
 
 GO
 

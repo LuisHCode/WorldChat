@@ -7,7 +7,8 @@ $container->set(
             "host" => "host.docker.internal",
             "db" => "ProyectoBD",
             "usr" => "usuario",
-            "passw" => "usuario"
+            "passw" => "usuario",
+            "charset" => "utf8mb4",
         ];
     }
 );
