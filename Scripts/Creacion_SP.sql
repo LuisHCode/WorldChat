@@ -173,65 +173,67 @@ END;
 GO
 
 
-CREATE PROCEDURE sp_EnviarMensaje
+CREATE OR ALTER PROCEDURE sp_EnviarMensaje
     @id_emisor INT,
-    @id_receptor INT = NULL,
-    @id_chat INT = NULL,
-    @contenido_texto NVARCHAR(MAX), -- Se recibe en texto
-    @estado_envio VARCHAR(20) = 'Enviado',
-    @clave NVARCHAR(100)            -- Frase de cifrado
+    @id_chat INT,
+    @contenido NVARCHAR(MAX) -- Se recibe en texto
 AS
 BEGIN
     BEGIN TRY
         IF NOT EXISTS (SELECT 1 FROM Usuario WHERE id_usuario = @id_emisor)
             THROW 50008, 'El emisor no existe.', 1
 
-        IF @id_receptor IS NULL AND @id_chat IS NULL
-            THROW 50009, 'Debe especificar un receptor o un chat.', 1
-
-        IF @id_receptor IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Usuario WHERE id_usuario = @id_receptor)
-            THROW 50010, 'El receptor no existe.', 1
-
         IF @id_chat IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Chat WHERE id_chat = @id_chat)
             THROW 50011, 'El chat no existe.', 1
 
-        -- Cifrar el contenido
-        DECLARE @contenido_cifrado VARBINARY(MAX)
-        SET @contenido_cifrado = EncryptByPassPhrase(@clave, @contenido_texto)
+        OPEN SYMMETRIC KEY ClaveSimetrica
+            DECRYPTION BY CERTIFICATE MiCertificadoConClave;
 
-        INSERT INTO Mensaje (id_emisor, id_receptor, id_chat, contenido, estado_envio)
-        VALUES (@id_emisor, @id_receptor, @id_chat, @contenido_cifrado, @estado_envio)
+        -- Cifrar el contenido
+         DECLARE @contenido_encriptado VARBINARY(MAX) = 
+            EncryptByKey(Key_GUID('ClaveSimetrica'), CONVERT(VARBINARY(MAX), @contenido));
+
+        INSERT INTO Mensaje (id_emisor, id_chat, contenido, estado_envio)
+        VALUES (@id_emisor,@id_chat, @contenido_encriptado, 'Enviado')
+
+        CLOSE SYMMETRIC KEY ClaveSimetrica;
+        SELECT 1 AS exito;
     END TRY
     BEGIN CATCH
-        PRINT ERROR_MESSAGE()
+        SELECT 0 AS exito;
     END CATCH
 END;
 
 GO
 
 
-CREATE PROCEDURE sp_LeerMensajesChat
-    @id_chat INT,
-    @clave NVARCHAR(100) -- Clave para descifrar
+CREATE OR ALTER PROCEDURE sp_LeerMensajesChat
+    @id_chat INT
 AS
 BEGIN
     BEGIN TRY
         IF NOT EXISTS (SELECT 1 FROM Chat WHERE id_chat = @id_chat)
             THROW 50020, 'El chat no existe.', 1
 
+            OPEN SYMMETRIC KEY ClaveSimetrica
+            DECRYPTION BY CERTIFICATE MiCertificadoConClave;           
+
         SELECT 
             m.id_mensaje,
-            u.nombre_usuario AS emisor,
-            CONVERT(NVARCHAR(MAX), DecryptByPassPhrase(@clave, m.contenido)) AS contenido_descifrado,
+            m.id_emisor,
+            u.nombre_usuario AS nombre_emisor,
+            m.id_chat,
+            CONVERT(NVARCHAR(200), Decryptbykey(contenido)) AS 'Contenido', 
             m.fecha_envio,
             m.estado_envio
         FROM Mensaje m
         INNER JOIN Usuario u ON m.id_emisor = u.id_usuario
         WHERE m.id_chat = @id_chat
         ORDER BY m.fecha_envio ASC
+        CLOSE SYMMETRIC KEY ClaveSimetrica;
     END TRY
     BEGIN CATCH
-        PRINT ERROR_MESSAGE()
+        SELECT 0 AS exito;
     END CATCH
 END;
 
@@ -272,8 +274,6 @@ BEGIN
         THROW;
     END CATCH
 END;
-GO
-
 
 GO
 
