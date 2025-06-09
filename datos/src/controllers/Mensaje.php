@@ -185,6 +185,38 @@ class Mensaje
             ->withStatus($status);
     }
 
+    public function readChat(Request $request, Response $response, $args)
+    {
+        $id_chat = isset($args['id_chat']) ? (int) $args['id_chat'] : null;
+        $sql = "EXEC sp_LeerMensajesChat @id_chat = :id_chat";
+        $con = $this->container->get('base_datos');
+        $con->beginTransaction();
+        $query = $con->prepare($sql);
+
+        if (empty($id_chat)) {
+            $response->getBody()->write(json_encode(['error' => 'Faltan parámetros obligatorios']));
+            return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
+        }
+
+        $query->bindValue(':id_chat', $id_chat, PDO::PARAM_INT);
+        $query->execute();
+        $res = $query->fetchAll(PDO::FETCH_ASSOC);
+        try {
+            $query->execute();
+            $con->commit();
+            $status = 201;
+        } catch (\PDOException $e) {
+            $status = 500;
+            $con->rollBack();
+        }
+        $query = null;
+        $con = null;
+
+        $response->getBody()->write(json_encode($res ?? [], JSON_UNESCAPED_UNICODE));
+        return $response
+            ->withHeader('Content-Type', 'application/json')
+            ->withStatus($status);
+    }
 
 
 }

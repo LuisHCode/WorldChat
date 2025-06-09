@@ -21,6 +21,7 @@ $app->group('/api', function (RouteCollectorProxy $api) {
 
     $api->group('/mensaje', function (RouteCollectorProxy $endpoint) {
         $endpoint->get('/read', Mensaje::class . ':readPrivate');
+        $endpoint->get('/read/chat/{id_chat}', Mensaje::class . ':readChat');
         $endpoint->post('/{id_receptor}', Mensaje::class . ':sendPrivateMessage');
         $endpoint->post('/group/{id_chat}', Mensaje::class . ':sendChatMessage');
         $endpoint->delete('/{id}', Mensaje::class . ':delete');

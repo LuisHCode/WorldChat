@@ -27,6 +27,12 @@ Content-Type: application/json
   "id_usuario2": 2
 }
 
+###
+
+GET {{uriMensaje}}/read/chat/9
+Content-Type: application/json
+
+
 
 ###
 POST {{uriChat}}
