@@ -1,0 +1,7 @@
+Lista de instalaciones para el proyecto
+
+pip install pyodbc
+pip install mysql-connector-python
+pip install pycryptodome
+
+
