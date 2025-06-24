@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Clone</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Sidebar with contacts -->
+    <div class="sidebar">
+        <div class="header">
+            <div class="user-img">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=User" alt="User" class="avatar">
+            </div>
+            <h3>WhatsApp</h3>
+        </div>
+        <div class="search">
+            <input type="text" placeholder="Search or start new chat">
+        </div>
+        <div class="contacts" id="contacts">
+            <!-- Contacts will be added here by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Main chat area -->
+    <div class="chat">
+        <div class="chat-header">
+            <div class="contact-info">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=default" alt="Contact" class="avatar">
+                <div class="contact-name">
+                    <h4 id="current-chat-name">Select a chat</h4>
+                    <small>online</small>
+                </div>
+            </div>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+            <!-- Messages will be added here by JavaScript -->
+        </div>
+        <div class="chat-input">
+            <input type="text" id="message-input" placeholder="Type a message">
+            <button id="send-button">Send</button>
+        </div>
+    </div>
+</div>
+    <script src="script.js"></script>
+  </body>
+</html>

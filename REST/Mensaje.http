@@ -21,17 +21,16 @@ Content-Type: application/json
 }
 
 ###
-GET {{uriMensaje}}/read
+GET {{uriMensaje}}/read/3
 Content-Type: application/json
 
 {
-  "id_usuario1":1,
-  "id_usuario2": 2
+  "id_usuario": 2
 }
 
 ###
 
-GET {{uriMensaje}}/read/chat/9
+GET {{uriMensaje}}/read/chat/4
 Content-Type: application/json
 
 

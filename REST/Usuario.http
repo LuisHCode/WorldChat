@@ -9,10 +9,10 @@ POST {{uriUsuario}}/create
 Content-Type: application/json
 
 {
-  "nombre_usuario": "nauian",
-  "nombre_completo": "Ian Portuguez",
-  "telefono": "45125836",
-  "correo": "iannaun@gmail.com",
+  "nombre_usuario": "Tochi",
+  "nombre_completo": "Josep Lopez",
+  "telefono": "0000000",
+  "correo": "tochi@gmail.com",
   "contrasenna": "123456",
   "foto_perfil": "",
   "estado": "Activo"
