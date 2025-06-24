@@ -50,6 +50,14 @@ POST {{uriParticipante}}/agregar/4
 Content-Type: application/json
 
 {
-  "id_usuario": 6
+  "id_usuario": 4
+}
+###
+POST {{uriParticipante}}/eliminar/4
+Content-Type: application/json
+
+{
+  "id_usuario": 6,
+  "id_admin": 4
 }
 ###
