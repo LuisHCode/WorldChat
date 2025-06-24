@@ -3,6 +3,8 @@ from Crypto.Util.Padding import pad, unpad
 import hashlib
 import base64
 
+passphrase = 'ClaveSimetrica'
+
 # Derivar clave AES-256 desde la passphrase
 def derivar_clave(passphrase):
     return hashlib.sha256(passphrase.encode("utf-8")).digest()  # 32 bytes

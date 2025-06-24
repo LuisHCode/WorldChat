@@ -5,28 +5,28 @@ Content-Type: application/json
 
 ###
 
-POST {{uriUsuario}}
+POST {{uriUsuario}}/create
 Content-Type: application/json
 
 {
-  "nombre_usuario": "Luisini",
-  "nombre_completo": "Luis Lopez Hernandez",
-  "telefono": "727521812",
-  "correo": "luisihi@gmail.com",
-  "contrasenna": "luis123",
+  "nombre_usuario": "nauian",
+  "nombre_completo": "Ian Portuguez",
+  "telefono": "45125836",
+  "correo": "iannaun@gmail.com",
+  "contrasenna": "123456",
   "foto_perfil": "",
-  "estado": "q"
+  "estado": "Activo"
 }
 
 ###
 
-PUT {{uriUsuario}}/1
+PUT {{uriUsuario}}/update/6
 Content-Type: application/json
 
 {
-  "nombre_usuario": "",
+  "nombre_usuario": "xXIan_InsanoXx",
   "nombre_completo": "",
-  "telefono": "43232412",
+  "telefono": "",
   "correo": "",
   "contrasenna": "",
   "foto_perfil": "",

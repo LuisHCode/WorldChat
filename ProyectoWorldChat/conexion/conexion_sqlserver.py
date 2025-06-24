@@ -1,30 +1,23 @@
-import pyodbc
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
-BASE_DATOS = "ProyectoBD"
 SERVIDOR = "localhost"
+BASE_DATOS = "ProyectoBD"
+DRIVER_ODBC = "ODBC+Driver+17+for+SQL+Server"
 
+DATABASE_URL = (
+    f"mssql+pyodbc://{SERVIDOR}/{BASE_DATOS}"
+    f"?driver={DRIVER_ODBC}"
+    f"&trusted_connection=yes"
+)
+
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# ✅ Ahora esta función es directamente usable en Depends()
 def obtener_conexion_sqlserver():
+    db = SessionLocal()
     try:
-        # Conexión normal a la base de datos
-        conexion = pyodbc.connect(
-            f"DRIVER={{SQL Server}};SERVER={SERVIDOR};DATABASE={BASE_DATOS};Trusted_Connection=yes;",
-            timeout=5
-        )
-        print(f"✅ Conexión a SQL Server con base '{BASE_DATOS}' exitosa.")
-        return conexion
-    except pyodbc.Error as e:
-        print(f"⚠️  No se pudo conectar a la base '{BASE_DATOS}': {e}")
-        print("🔄 Intentando conexión sin base de datos para crearla...")
-
-        try:
-            # Conexión sin especificar base de datos
-            conexion = pyodbc.connect(
-                f"DRIVER={{SQL Server}};SERVER={SERVIDOR};Trusted_Connection=yes;",
-                timeout=5,
-                autocommit=True  #  NECESARIO para CREATE DATABASE
-            )
-            print("✅ Conexión a SQL Server sin base. Lista para crear estructura.")
-            return conexion
-        except pyodbc.Error as err:
-            print("❌ Error al conectar a SQL Server sin base:", str(err))
-            return None
+        yield db
+    finally:
+        db.close()
