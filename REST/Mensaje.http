@@ -1,0 +1,55 @@
+
+@uriMensaje = http://localhost:8000/api/mensaje
+@uriChat = http://localhost:8000/api/chat
+@uriParticipante = http://localhost:8000/api/participante
+
+POST {{uriMensaje}}/3
+Content-Type: application/json
+
+{
+  "id_emisor": 2,
+  "contenido": "prueba de mensaje privado"
+}
+
+###
+POST {{uriMensaje}}/group/9
+Content-Type: application/json
+
+{
+  "id_emisor": 2,
+  "contenido": "prueba de mensaje privado"
+}
+
+###
+GET {{uriMensaje}}/read
+Content-Type: application/json
+
+{
+  "id_usuario1":1,
+  "id_usuario2": 2
+}
+
+###
+
+GET {{uriMensaje}}/read/chat/9
+Content-Type: application/json
+
+
+
+###
+POST {{uriChat}}/create
+Content-Type: application/json
+
+{
+  "nombre_chat": "aaaa",
+  "id_creador": 4
+}
+
+###
+POST {{uriParticipante}}/agregar/4
+Content-Type: application/json
+
+{
+  "id_usuario": 6
+}
+###

@@ -3,6 +3,7 @@ from fastapi.responses import PlainTextResponse
 from logica.controllers.Usuario import usuario_router
 from logica.controllers.Mensaje import mensaje_router
 from logica.controllers.Chat import chat_router
+from logica.controllers.Participante import participante_router
 
 app = FastAPI()
 
@@ -15,3 +16,4 @@ async def root():
 app.include_router(usuario_router)
 app.include_router(mensaje_router)
 app.include_router(chat_router)
+app.include_router(participante_router)
