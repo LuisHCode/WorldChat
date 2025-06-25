@@ -1,3 +1,4 @@
+
 from fastapi import APIRouter, Request, Response, status, Depends
 from sqlalchemy import text
 from fastapi.responses import JSONResponse
@@ -69,7 +70,7 @@ async def crear_mensaje_privado(
 
     # 🛡️ Encriptar contenido antes de enviar
     try:
-        contenido_encriptado = en.encriptar(contenido, en.passphrase)
+        contenido_encriptado = en.encriptar(contenido, en.DEFAULT_PASSPHRASE)
     except Exception as e:
         raise HTTPException(
             status_code=500, detail="Error al encriptar el mensaje: " + str(e)
@@ -114,6 +115,7 @@ async def crear_mensaje_privado(
     except Exception as e:
         raise HTTPException(status_code=500, detail="Error inesperado: " + str(e))
 
+import base64
 
 @mensaje_router.get("/read/{id_receptor}")
 async def leer_mensaje_privado(
@@ -129,7 +131,7 @@ async def leer_mensaje_privado(
             body[k] = None
 
     id_usuario = body.get("id_usuario")
-    clave = en.passphrase  # Reutiliza tu clave simétrica (segura)
+    clave = en.DEFAULT_PASSPHRASE  # Reutiliza tu clave simétrica (segura)
 
     if not id_usuario:
         raise HTTPException(status_code=400, detail="Faltan parámetros obligatorios")
@@ -138,7 +140,8 @@ async def leer_mensaje_privado(
         """
         EXEC sp_ObtenerMensajesPrivados 
             @id_usuario1 = :id_usuario, 
-            @id_usuario2 = :id_receptor
+            @id_usuario2 = :id_receptor,
+            @clave =  :clave
     """
     )
 
@@ -146,7 +149,7 @@ async def leer_mensaje_privado(
         with db.begin():
             result = db.execute(
                 sql,
-                {"id_usuario": id_usuario, "id_receptor": id_receptor},
+                {"id_usuario": id_usuario, "id_receptor": id_receptor, "clave": clave},
             )
 
             rows = result.mappings().all()
@@ -157,7 +160,12 @@ async def leer_mensaje_privado(
         mensajes = []
         for row in rows:
             try:
-                contenido_desencriptado = en.desencriptar(row["contenido"], clave)
+                contenido_desencriptado = en.desencriptar_seguro(row["contenido"], clave)
+
+                # Si el contenido desencriptado es de tipo bytes, lo convertimos a base64
+                if isinstance(contenido_desencriptado, bytes):
+                    contenido_desencriptado = base64.b64encode(contenido_desencriptado).decode('utf-8')
+
             except Exception as e:
                 contenido_desencriptado = "[error al desencriptar]"
 

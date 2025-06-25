@@ -8,6 +8,10 @@ Content-Type: application/json
 }
 
 ###
+GET {{uriUsuario}}/read
+Content-Type: application/json
+
+###
 
 POST {{uriUsuario}}/create
 Content-Type: application/json

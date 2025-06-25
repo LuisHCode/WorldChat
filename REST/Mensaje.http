@@ -3,7 +3,7 @@
 @uriChat = http://localhost:8000/api/chat
 @uriParticipante = http://localhost:8000/api/participante
 
-POST {{uriMensaje}}/3
+POST {{uriMensaje}}/enviar/3
 Content-Type: application/json
 
 {

@@ -327,18 +327,26 @@ CREATE OR ALTER PROCEDURE sp_traerChatsPrivado
     @id_usuario INT
 AS
 BEGIN
-	SET NOCOUNT ON;
+    SET NOCOUNT ON;
 
     BEGIN TRY
         -- Validar existencia del emisor
         IF NOT EXISTS (SELECT 1 FROM Usuario WHERE id_usuario = @id_usuario)
             THROW 50001, 'El usuario no existe.', 1;
+
         SELECT DISTINCT
             u.id_usuario, 
             u.nombre_usuario, 
             u.nombre_completo,
-            u.telefono, u.correo,
-            u.foto_perfil
+            u.telefono, 
+            u.correo,
+            u.foto_perfil,
+            -- Obtener el último mensaje entre el usuario y este contacto
+            (SELECT TOP 1 m.contenido 
+             FROM Mensaje m
+             WHERE (m.id_emisor = u.id_usuario AND m.id_receptor = @id_usuario)
+                OR (m.id_emisor = @id_usuario AND m.id_receptor = u.id_usuario)
+             ORDER BY m.fecha_envio DESC) AS ultimo_mensaje
         FROM 
             Usuario u
         JOIN
@@ -347,7 +355,7 @@ BEGIN
         WHERE
             (m.id_emisor = @id_usuario OR m.id_receptor = @id_usuario)
             AND u.id_usuario != @id_usuario;
-            END TRY
+    END TRY
     BEGIN CATCH
         PRINT ERROR_MESSAGE()
     END CATCH
