@@ -1,5 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+import pyodbc
 
 SERVIDOR = "localhost"
 BASE_DATOS = "ProyectoBD"
@@ -14,8 +15,19 @@ DATABASE_URL = (
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# ✅ Ahora esta función es directamente usable en Depends()
 def obtener_conexion_sqlserver():
+    try:
+        conn = pyodbc.connect(
+            "DRIVER={SQL Server};SERVER=localhost;DATABASE=ProyectoBD;Trusted_Connection=yes;",
+            autocommit=True
+        )
+        return conn
+    except Exception as e:
+        print("Error de conexión:", e)
+        return None
+    
+def obtener_conexion_sqlserver_dep():
+    """Para usar con Depends en FastAPI"""
     db = SessionLocal()
     try:
         yield db

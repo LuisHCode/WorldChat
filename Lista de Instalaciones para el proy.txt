@@ -3,5 +3,9 @@ Lista de instalaciones para el proyecto
 pip install pyodbc
 pip install mysql-connector-python
 pip install pycryptodome
+pip install fastapi
+pip install uvicorn
+pip install sqlalchemy
 
-
+Comando uvicorn
+python -m uvicorn logica.app.routes:app --reload

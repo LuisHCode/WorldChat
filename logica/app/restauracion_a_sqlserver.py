@@ -1,7 +1,7 @@
 import pandas as pd
 from conexion.conexion_sqlserver import obtener_conexion_sqlserver
-from logica.encriptador import encriptar
-from logica.crear_estructura_sqlserver import crear_estructura_sqlserver
+from .encriptador import encriptar
+from .crear_estructura_sqlserver import crear_estructura_sqlserver
 
 
 # --- Configuración ---

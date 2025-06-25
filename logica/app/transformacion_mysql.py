@@ -1,6 +1,8 @@
 import pandas as pd
 from conexion.conexion_mysql import obtener_conexion_mysql
-from logica.encriptador import desencriptar
+from .encriptador import desencriptar
+from .encriptador import desencriptar_seguro, passphrase
+
 
 # --- Configuración ---
 passphrase = "MiLlaveSecreta"

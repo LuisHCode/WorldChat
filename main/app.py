@@ -1,5 +1,10 @@
+import sys, os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+
 def crear_estructura_sqlserver(cursor):
-    import logica.crear_estructura_sqlserver as m
+    import logica.app.crear_estructura_sqlserver as m
+    from conexion.conexion_sqlserver import obtener_conexion_sqlserver
 
     conn = obtener_conexion_sqlserver()
     if conn:
@@ -11,7 +16,8 @@ def crear_estructura_sqlserver(cursor):
 
 
 def crear_estructura_mysql(cursor):
-    import logica.crear_estructura_mysql as m
+    import logica.app.crear_estructura_mysql as m
+    from conexion.conexion_mysql import obtener_conexion_mysql
 
     conn = obtener_conexion_mysql()
     if conn:
@@ -23,19 +29,19 @@ def crear_estructura_mysql(cursor):
 
 
 def restaurar_datos_sqlserver():
-    import logica.restauracion_a_sqlserver
+    import logica.app.restauracion_a_sqlserver
 
 
 def restaurar_datos_mysql():
-    import logica.restauracion_a_mysql
+    import logica.app.restauracion_a_mysql
 
 
 def exportar_datos_sqlserver():
-    import logica.transformacion_sqlserver
+    import logica.app.transformacion_sqlserver
 
 
 def exportar_datos_mysql():
-    import logica.transformacion_mysql
+    import logica.app.transformacion_mysql
 
 
 def verificar_conexion_sqlserver():
@@ -59,7 +65,7 @@ def verificar_conexion_mysql():
 
 
 def ver_datos_desencriptados():
-    from logica.ver_datos_desencriptados import main as ver_datos_main
+    from logica.app.ver_datos_desencriptados import main as ver_datos_main
 
     ver_datos_main()
 
@@ -80,7 +86,7 @@ def ejecutar_opcion(opcion):
     elif opcion == "5":
         exportar_datos_sqlserver()
     elif opcion == "6":
-        exportar_datos_mysql()()
+        exportar_datos_mysql()
     elif opcion == "7": 
         verificar_conexion_sqlserver()
     elif opcion == "8":

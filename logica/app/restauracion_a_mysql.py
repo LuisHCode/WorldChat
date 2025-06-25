@@ -1,7 +1,7 @@
 import pandas as pd
 from conexion.conexion_mysql import obtener_conexion_mysql
-from logica.encriptador import encriptar
-from logica.crear_estructura_mysql import crear_estructura_si_no_existe_mysql
+from .encriptador import encriptar
+from .crear_estructura_mysql import crear_estructura_si_no_existe_mysql
 import datetime
 
 # --- Configuración ---

@@ -9,12 +9,14 @@ from datetime import datetime
 import base64
 from conexion import conexion_sqlserver as s
 from logica.app import encriptador as en
+from logica.app.encriptador import desencriptar_seguro, passphrase
+
 
 mensaje_router = APIRouter(prefix="/api/mensaje")
 
 
 @mensaje_router.get("/read")
-def mensaje_read(response: Response, db=Depends(s.obtener_conexion_sqlserver)):
+def mensaje_read(response: Response, db=Depends(s.obtener_conexion_sqlserver_dep)):
     sql = text("SELECT * FROM Mensaje")
     result = db.execute(sql)
 
@@ -50,7 +52,7 @@ async def crear_mensaje_privado(
     id_receptor: int,
     request: Request,
     response: Response,
-    db=Depends(s.obtener_conexion_sqlserver),
+    db=Depends(s.obtener_conexion_sqlserver_dep),
 ):
     body = await request.json()
 
@@ -118,7 +120,7 @@ async def leer_mensaje_privado(
     id_receptor: int,
     request: Request,
     response: Response,
-    db=Depends(s.obtener_conexion_sqlserver),
+    db=Depends(s.obtener_conexion_sqlserver_dep),
 ):
     body = await request.json()
 
@@ -136,8 +138,7 @@ async def leer_mensaje_privado(
         """
         EXEC sp_ObtenerMensajesPrivados 
             @id_usuario1 = :id_usuario, 
-            @id_usuario2 = :id_receptor, 
-            @clave = :clave
+            @id_usuario2 = :id_receptor
     """
     )
 
@@ -145,7 +146,7 @@ async def leer_mensaje_privado(
         with db.begin():
             result = db.execute(
                 sql,
-                {"id_usuario": id_usuario, "id_receptor": id_receptor, "clave": clave},
+                {"id_usuario": id_usuario, "id_receptor": id_receptor},
             )
 
             rows = result.mappings().all()
@@ -189,15 +190,14 @@ async def leer_mensaje_chat(
     id_chat: int,
     request: Request,
     response: Response,
-    db=Depends(s.obtener_conexion_sqlserver),
+    db=Depends(s.obtener_conexion_sqlserver_dep),
 ):
     clave = en.passphrase  # Reutiliza tu clave simétrica (segura)
 
     sql = text(
         """
         EXEC sp_LeerMensajesChat 
-            @id_chat = :id_chat, 
-            @clave = :clave
+            @id_chat = :id_chat
     """
     )
 
@@ -205,7 +205,7 @@ async def leer_mensaje_chat(
         with db.begin():
             result = db.execute(
                 sql,
-                {"id_chat": id_chat, "clave": clave},
+                {"id_chat": id_chat},
             )
 
             rows = result.mappings().all()
@@ -249,7 +249,7 @@ async def crear_mensaje_chat(
     id_chat: int,
     request: Request,
     response: Response,
-    db=Depends(s.obtener_conexion_sqlserver),
+    db=Depends(s.obtener_conexion_sqlserver_dep),
 ):
     body = await request.json()
 
@@ -276,11 +276,11 @@ async def crear_mensaje_chat(
         EXEC sp_EnviarMensaje 
             @id_emisor = :id_emisor, 
             @id_chat = :id_chat, 
-            @contenido_texto = :contenido_texto,
-            @clave = :clave
+            @contenido = :contenido
     """
     )
 
+    
     try:
         # Ejecutar y capturar resultado
         result = db.execute(
@@ -288,8 +288,7 @@ async def crear_mensaje_chat(
             {
                 "id_emisor": id_emisor,
                 "id_chat": id_chat,
-                "contenido_texto": contenido_encriptado,
-                "clave": en.passphrase,
+                "contenido": contenido_encriptado
             },
         )
         # Recuperar resultados (si el SP devuelve SELECT)

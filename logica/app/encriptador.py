@@ -3,7 +3,8 @@ from Crypto.Util.Padding import pad, unpad
 import hashlib
 import base64
 
-passphrase = 'ClaveSimetrica'
+passphrase = "MiLlaveSecreta"
+DEFAULT_PASSPHRASE = "ClaveSimetrica"
 
 # Derivar clave AES-256 desde la passphrase
 def derivar_clave(passphrase):
@@ -24,6 +25,16 @@ def desencriptar(binario, passphrase):
     cifrado = binario[16:]
     cipher = AES.new(clave, AES.MODE_CBC, iv)
     return unpad(cipher.decrypt(cifrado), AES.block_size).decode("utf-8")
+
+
+def desencriptar_seguro(binario, passphrase):
+    try:
+        if not binario:
+            return None
+        return desencriptar(binario, passphrase)
+    except Exception as e:
+        return f"[Error desencriptando]"
+
 
 # --- Solo para pruebas ---
 if __name__ == "__main__":

@@ -1,6 +1,8 @@
 import pandas as pd
 from conexion.conexion_sqlserver import obtener_conexion_sqlserver
-from logica.encriptador import desencriptar
+from .encriptador import desencriptar
+from .encriptador import desencriptar_seguro, passphrase
+
 
 # --- Configuración ---
 passphrase = "MiLlaveSecreta"
@@ -24,12 +26,12 @@ with pd.ExcelWriter(archivo_salida, engine='openpyxl') as writer:
         # 🔓 Aplicar desencriptación si es necesario
         if tabla == "Usuario" and not df.empty:
             df["contrasenna_texto"] = df["contrasenna"].apply(
-                lambda b: desencriptar(b, passphrase) if pd.notna(b) else None
+                lambda b: desencriptar_seguro(b, passphrase) if pd.notna(b) else None
             )
 
         if tabla == "Mensaje" and not df.empty:
             df["contenido_texto"] = df["contenido"].apply(
-                lambda b: desencriptar(b, passphrase) if pd.notna(b) else None
+                lambda b: desencriptar_seguro(b, passphrase) if pd.notna(b) else None
             )
 
         df.to_excel(writer, sheet_name=tabla[:31], index=False)

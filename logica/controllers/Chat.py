@@ -14,7 +14,7 @@ chat_router = APIRouter(prefix="/api/chat")
 
 @chat_router.post("/create")
 async def create_chat(
-    request: Request, response: Response, db=Depends(s.obtener_conexion_sqlserver)
+    request: Request, response: Response, db=Depends(s.obtener_conexion_sqlserver_dep)
 ):
     body = await request.json()
     # SQL con parámetros nombrados

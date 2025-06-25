@@ -9,10 +9,10 @@ POST {{uriUsuario}}/create
 Content-Type: application/json
 
 {
-  "nombre_usuario": "Tochi",
-  "nombre_completo": "Josep Lopez",
-  "telefono": "0000000",
-  "correo": "tochi@gmail.com",
+  "nombre_usuario": "dddd",
+  "nombre_completo": "dddd Mora",
+  "telefono": "88888887",
+  "correo": "mordda@gmail.com",
   "contrasenna": "123456",
   "foto_perfil": "",
   "estado": "Activo"
@@ -24,7 +24,7 @@ PUT {{uriUsuario}}/update/6
 Content-Type: application/json
 
 {
-  "nombre_usuario": "xXIan_InsanoXx",
+  "nombre_usuario": "MorotoOso",
   "nombre_completo": "",
   "telefono": "",
   "correo": "",

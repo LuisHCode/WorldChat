@@ -9,6 +9,8 @@ from datetime import datetime
 import base64
 from conexion import conexion_sqlserver as s
 from logica.app import encriptador as en
+from logica.app.encriptador import desencriptar_seguro, passphrase
+
 
 participante_router = APIRouter(prefix="/api/participante")
 
@@ -18,7 +20,7 @@ async def agregar_participante(
     id_chat: int,
     request: Request,
     response: Response,
-    db=Depends(s.obtener_conexion_sqlserver),
+    db=Depends(s.obtener_conexion_sqlserver_dep),
 ):
     body = await request.json()
     # SQL con parámetros nombrados
@@ -59,7 +61,7 @@ async def eliminar_participante(
     id_chat: int,
     request: Request,
     response: Response,
-    db=Depends(s.obtener_conexion_sqlserver),
+    db=Depends(s.obtener_conexion_sqlserver_dep),
 ):
     body = await request.json()
     # SQL con parámetros nombrados

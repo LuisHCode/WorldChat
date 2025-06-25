@@ -1,4 +1,5 @@
-from logica.encriptador import desencriptar
+from .encriptador import desencriptar
+from .encriptador import desencriptar_seguro, passphrase
 from conexion.conexion_sqlserver import obtener_conexion_sqlserver
 from conexion.conexion_mysql import obtener_conexion_mysql
 import pandas as pd

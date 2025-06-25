@@ -7,12 +7,15 @@ from sqlalchemy.exc import DBAPIError
 from datetime import datetime
 import base64
 from conexion import conexion_sqlserver as s
+from logica.app.encriptador import desencriptar_seguro, passphrase
+from logica.app.encriptador import encriptar
+
 
 usuario_router = APIRouter(prefix="/api/usuario")
 
 
 @usuario_router.get("/read")
-def usuario_read(response: Response, db=Depends(s.obtener_conexion_sqlserver)):
+def usuario_read(response: Response, db=Depends(s.obtener_conexion_sqlserver_dep)):
     sql = text("SELECT * FROM Usuario")
     result = db.execute(sql)
 
@@ -54,7 +57,7 @@ def usuario_read(response: Response, db=Depends(s.obtener_conexion_sqlserver)):
 
 @usuario_router.post("/create")
 async def create_usuario(
-    request: Request, response: Response, db=Depends(s.obtener_conexion_sqlserver)
+    request: Request, response: Response, db=Depends(s.obtener_conexion_sqlserver_dep)
 ):
     body = await request.json()
 
@@ -76,6 +79,10 @@ async def create_usuario(
             @estado = :estado
     """
     )
+
+    # Encriptar contraseña si viene
+    if "contrasenna" in body and body["contrasenna"]:
+        body["contrasenna"] = encriptar(body["contrasenna"], passphrase)
 
     # Asignar valores por defecto si no vienen
     body.setdefault("estado", "Activo")
@@ -113,7 +120,7 @@ async def update_usuario(
     id: int,
     request: Request,
     response: Response,
-    db=Depends(s.obtener_conexion_sqlserver),
+    db=Depends(s.obtener_conexion_sqlserver_dep),
 ):
     body = await request.json()
 
@@ -121,6 +128,10 @@ async def update_usuario(
     for k, v in body.items():
         if isinstance(v, str) and v.strip() == "":
             body[k] = None
+
+    # Encriptar contraseña si viene
+    if "contrasenna" in body and body["contrasenna"]:
+        body["contrasenna"] = encriptar(body["contrasenna"], passphrase)
 
     body.setdefault("estado", "Activo")
 
