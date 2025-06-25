@@ -319,3 +319,37 @@ BEGIN
         PRINT ERROR_MESSAGE()
     END CATCH
 END;
+
+
+GO
+
+CREATE OR ALTER PROCEDURE sp_traerChatsPrivado
+    @id_usuario INT
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+    BEGIN TRY
+        -- Validar existencia del emisor
+        IF NOT EXISTS (SELECT 1 FROM Usuario WHERE id_usuario = @id_usuario)
+            THROW 50001, 'El usuario no existe.', 1;
+        SELECT DISTINCT
+            u.id_usuario, 
+            u.nombre_usuario, 
+            u.nombre_completo,
+            u.telefono, u.correo,
+            u.foto_perfil
+        FROM 
+            Usuario u
+        JOIN
+            Mensaje m 
+                ON u.id_usuario = m.id_receptor OR u.id_usuario = m.id_emisor
+        WHERE
+            (m.id_emisor = @id_usuario OR m.id_receptor = @id_usuario)
+            AND u.id_usuario != @id_usuario;
+            END TRY
+    BEGIN CATCH
+        PRINT ERROR_MESSAGE()
+    END CATCH
+END;
+

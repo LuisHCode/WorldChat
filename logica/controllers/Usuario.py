@@ -14,6 +14,47 @@ from logica.app.encriptador import encriptar
 usuario_router = APIRouter(prefix="/api/usuario")
 
 
+@usuario_router.get("/contactos")
+async def usuario_read_contacts(
+    request: Request, response: Response, db=Depends(s.obtener_conexion_sqlserver_dep)
+):
+    body = await request.json()
+
+    # SQL con parámetros nombrados
+    sql = text(
+        """
+        EXEC sp_traerChatsPrivado 
+            @id_usuario = :id_usuario
+    """
+    )
+
+    try:
+        # Ejecutamos la consulta con el parámetro `id_usuario`
+        result = db.execute(sql, {"id_usuario": body.get("id_usuario")})
+
+        # Asegurarse de que el resultado contiene datos antes de intentar acceder a ellos
+        rows = result.mappings().all()
+
+        if not rows:
+            return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+        res = []
+        for row in rows:
+            row_dict = dict(row)
+            res.append(row_dict)
+
+        return JSONResponse(content=res, status_code=status.HTTP_200_OK)
+
+    except DBAPIError as e:
+        # Error de base de datos
+        raise HTTPException(
+            status_code=500, detail="Error de base de datos: " + str(e.orig)
+        )
+    except Exception as e:
+        # Cualquier otro error inesperado
+        raise HTTPException(status_code=500, detail="Error inesperado: " + str(e))
+
+
 @usuario_router.get("/read")
 def usuario_read(response: Response, db=Depends(s.obtener_conexion_sqlserver_dep)):
     sql = text("SELECT * FROM Usuario")

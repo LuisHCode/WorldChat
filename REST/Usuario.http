@@ -1,7 +1,11 @@
 @uriUsuario = http://localhost:8000/api/usuario
 
-GET {{uriUsuario}}/read
+GET {{uriUsuario}}/contactos
 Content-Type: application/json
+
+{
+  "id_usuario": 2
+}
 
 ###
 
