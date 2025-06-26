@@ -8,6 +8,15 @@ Content-Type: application/json
 }
 
 ###
+POST {{uriUsuario}}/login
+Content-Type: application/json
+
+{
+    "argumento": "0000000000", 
+    "passw": "mog0Lik0$"  
+}
+
+###
 GET {{uriUsuario}}/read/10
 Content-Type: application/json
 

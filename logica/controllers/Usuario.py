@@ -9,6 +9,7 @@ from datetime import datetime
 import base64
 from conexion import conexion_sqlserver as s
 from logica.app import encriptador as en
+from logica.app import login as login
 from logica.app.encriptador import passphrase, encriptar
 from conexion.conexion_activa import obtener_db, obtener_motor_actual
 import re
@@ -274,3 +275,33 @@ async def update_usuario(
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail="Error inesperado: " + str(e))
+
+
+
+# ACA PARA PROBAR EL LOGIN 
+
+
+@usuario_router.post("/login")
+async def login_usuario(request: Request):
+    try:
+        # Obtener el cuerpo de la solicitud (debe ser un JSON)
+        body = await request.json()  # Leer el cuerpo como JSON
+        print(f"Body recibido: {body}")  # Para depurar qué estamos recibiendo
+
+        # Extraer los valores del cuerpo
+        argumento = body.get("argumento")  # Correo o teléfono
+        passw = body.get("passw")  # Contraseña
+
+        # Validar que ambos parámetros estén presentes
+        if not argumento or not passw:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Faltan parámetros")
+
+        # Llamar a la función para verificar las credenciales
+        if login.verificar_credenciales(argumento, passw) == 1:
+            return JSONResponse(status_code=status.HTTP_200_OK, content={"message": "Login exitoso"})
+        else:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciales inválidas")
+
+    except Exception as e:
+        # Si ocurre un error, devolver una excepción interna
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Error al procesar la solicitud: " + str(e))
