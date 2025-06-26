@@ -55,7 +55,6 @@ async function loadUser(idUsuario, current) {
 
     // Guardar el objeto completo del usuario en un array
     current = userData; // Guardamos el usuario como un array
-    // Llamamos a loadContacts() después de haber cargado el usuario
     return current;
   } catch (error) {
     console.error("Ocurrió un error al obtener el usuario:", error);
@@ -71,7 +70,7 @@ async function loadContacts() {
     return;
   }
 
-  try {
+  try {    
     const response = await fetch(
       "http://localhost:8000/api/usuario/contactos",
       {
@@ -79,7 +78,7 @@ async function loadContacts() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ id_usuario: currentUser[0].id_usuario }), // Ahora usamos currentUser[0].id_usuario
+        body: JSON.stringify({ id_usuario: idUsuarioActual }), // Ahora usamos currentUser[0].id_usuario
       }
     );
 
@@ -97,21 +96,23 @@ async function loadContacts() {
       }));
 
       // Llamar a la función que renderiza los contactos
-      renderContacts();
+      renderContacts(true);
     } else {
       console.error("Los datos no son un array:", data);
     }
   } catch (error) {
+    renderContacts(false);
     console.error("Error al cargar los contactos:", error);
   }
 }
 
 // Función que renderiza los contactos en el HTML
-function renderContacts() {
-  const contactsContainer = document.getElementById("contacts");
-  contactsContainer.innerHTML = contacts
-    .map(
-      (contact) => `
+function renderContacts(hayContactos) {
+  if (hayContactos) {
+    const contactsContainer = document.getElementById("contacts");
+    contactsContainer.innerHTML = contacts
+      .map(
+        (contact) => `
     <div class="contact" data-id="${contact.id}">
         <img src="${contact.avatar}" alt="${contact.name}" class="avatar">
         <div class="contact-info">
@@ -120,8 +121,20 @@ function renderContacts() {
         </div>
     </div>
   `
-    )
-    .join("");
+      )
+      .join("");
+  } else {
+    const contactsContainer = document.getElementById("contacts");
+    contactsContainer.innerHTML = contacts
+      .map(
+        (contact) => `
+    <div class="contact" data-id="${contact.id}">
+
+    </div>
+  `
+      )
+      .join("");
+  }
 
   // Agregar eventos de click a los contactos
   document.querySelectorAll(".contact").forEach((contact) => {
@@ -231,8 +244,11 @@ async function sendMessage(text) {
 }
 
 async function refresh() {
-  console.log("VIENDO QUE TIENE EL LOCALSTORAGE", localStorage.getItem("idUsuarioActual"));
-  
+  console.log(
+    "VIENDO QUE TIENE EL LOCALSTORAGE",
+    localStorage.getItem("idUsuarioActual")
+  );
+
   cargarIdUsuarioActual();
   console.log("VIENDO QUE TEINE IDUSUARIOACT", idUsuarioActual);
   if (idUsuarioActual == 0) {
@@ -315,8 +331,8 @@ function guardarIdUsuarioActual(valor) {
 
 // Logout function
 function logout() {
-  currentUser = null;
-  currentChat = null;
+  currentUser = [];
+  currentChat = [];
   guardarIdUsuarioActual(0);
   contacts = [];
   hideApp();
