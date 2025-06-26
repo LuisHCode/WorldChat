@@ -95,13 +95,12 @@ async def usuario_read(
 
         # Codificar contraseña
         if "contrasenna" in row_dict and row_dict["contrasenna"] is not None:
-            if isinstance(row_dict["contrasenna"], bytes):
-                row_dict["contrasenna"] = base64.b64encode(
-                    row_dict["contrasenna"]
-                ).decode("utf-8")
-            else:
-                row_dict["contrasenna"] = str(row_dict["contrasenna"])
-
+            try:
+                contenido = en.desencriptar(row["contrasenna"], passphrase)
+                row_dict["contrasenna"] = contenido
+            except Exception:
+                contenido = "[error al desencriptar]"
+                row_dict["contrasenna"] = contenido
         # Codificar foto (si existe)
         if "foto_perfil" in row_dict and row_dict["foto_perfil"] is not None:
             if isinstance(row_dict["foto_perfil"], bytes):
