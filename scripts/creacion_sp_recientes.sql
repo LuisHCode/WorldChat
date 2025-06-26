@@ -146,12 +146,11 @@ END;
 
 GO
 
-CREATE OR ALTER PROCEDURE [dbo].[sp_EnviarMensaje]
+CREATE OR ALTER PROCEDURE [dbo].[sp_EnviarMensaje] -- tenia clave
     @id_emisor INT,
     @id_chat INT,
     @contenido_texto VARBINARY(MAX),
-    @estado_envio VARCHAR(20) = 'Enviado',
-    @clave NVARCHAR(100)
+    @estado_envio VARCHAR(20) = 'Enviado'
 AS
 BEGIN
     SET NOCOUNT ON;  -- 🔁 Previene mensajes de conteo (importantísimo para que FastAPI lo entienda bien)
@@ -222,9 +221,8 @@ END;
 
 GO
 
-CREATE OR ALTER PROCEDURE [dbo].[sp_LeerMensajesChat]
-    @id_chat INT,
-    @clave NVARCHAR(100) -- Clave para descifrar
+CREATE OR ALTER PROCEDURE [dbo].[sp_LeerMensajesChat] -- tenia clave
+    @id_chat INT
 AS
 BEGIN
     BEGIN TRY
@@ -290,10 +288,9 @@ END;
 
 GO
 
-CREATE OR ALTER PROCEDURE [dbo].[sp_ObtenerMensajesPrivados]
+CREATE OR ALTER PROCEDURE [dbo].[sp_ObtenerMensajesPrivados] --tenia clave
     @id_usuario1 INT,
-    @id_usuario2 INT,
-    @clave NVARCHAR(100) -- clave de cifrado
+    @id_usuario2 INT
 AS
 BEGIN
     BEGIN TRY
@@ -362,3 +359,49 @@ BEGIN
     END CATCH
 END;
 
+GO
+
+CREATE OR ALTER PROCEDURE sp_buscarUsuarios
+    @argumento NVARCHAR(100),
+    @id_usuario INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    BEGIN TRY
+        SELECT DISTINCT
+            u.id_usuario, 
+            u.nombre_usuario, 
+            u.nombre_completo,
+            u.telefono, 
+            u.correo,
+            u.foto_perfil,
+            -- Obtener el último mensaje entre el usuario y este contacto
+            -- Si no hay mensajes, devolver NULL
+            ISNULL((
+                SELECT TOP 1 m.contenido 
+                FROM Mensaje m
+                WHERE (m.id_emisor = u.id_usuario AND m.id_receptor = @id_usuario)
+                    OR (m.id_emisor = @id_usuario AND m.id_receptor = u.id_usuario)
+                ORDER BY m.fecha_envio DESC
+            ), NULL) AS ultimo_mensaje
+        FROM 
+            Usuario u
+        LEFT JOIN
+            Mensaje m 
+                ON (u.id_usuario = m.id_receptor OR u.id_usuario = m.id_emisor)
+                AND (m.id_emisor = @id_usuario OR m.id_receptor = @id_usuario)
+        WHERE
+            u.id_usuario != @id_usuario
+            AND (
+                u.nombre_usuario LIKE '%' + @argumento + '%'   -- Buscar por nombre de usuario
+                OR u.correo LIKE '%' + @argumento + '%'         -- Buscar por correo
+            );
+    END TRY
+    BEGIN CATCH
+        PRINT ERROR_MESSAGE()
+    END CATCH
+END;
+
+
+select * from Mensaje

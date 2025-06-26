@@ -198,11 +198,11 @@ async function refresh() {
   currentChat = await loadUser(3);  
   loadContacts();
 }
-    
+
 // Inicializar la aplicación
 document.addEventListener("DOMContentLoaded", async () => {
   // Primero, cargamos el usuario
-  currentUser = await loadUser(3); // Suponemos que el id del usuario actual es 1 (debería ser dinámico)
+  currentUser = await loadUser(5); // Suponemos que el id del usuario actual es 1 (debería ser dinámico)
 
   // Una vez que se haya cargado el usuario, cargamos los contactos
   loadContacts(); // Ahora, cargamos los contactos después de que el usuario ha sido cargado

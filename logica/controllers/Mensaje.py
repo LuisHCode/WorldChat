@@ -1,5 +1,5 @@
 
-from fastapi import APIRouter, Request, Response, status, Depends
+from fastapi import APIRouter, Request, Response, status, Depends, HTTPException
 from sqlalchemy import text
 from fastapi.responses import JSONResponse
 from fastapi import HTTPException
@@ -11,7 +11,6 @@ import base64
 from conexion import conexion_sqlserver as s
 from logica.app import encriptador as en
 from logica.app.encriptador import desencriptar_seguro, passphrase
-from logica.app import encriptador as en
 from logica.app.encriptador import passphrase
 from conexion.conexion_activa import obtener_db, obtener_motor_actual
 
@@ -20,35 +19,32 @@ mensaje_router = APIRouter(prefix="/api/mensaje")
 
 
 @mensaje_router.get("/read")
-def mensaje_read(response: Response, db=Depends(s.obtener_conexion_sqlserver_dep)):
-    sql = text("SELECT * FROM Mensaje")
-    result = db.execute(sql)
+def mensaje_read(response: Response, db=Depends(obtener_db)):
+    try:
+        sql = text("SELECT * FROM Mensaje")
+        result = db.execute(sql)
 
-    res = []
-    for row in result.mappings().all():
-        row_dict = dict(row)
+        res = []
+        for row in result.mappings().all():
+            row_dict = dict(row)
 
-        # Codificar contraseña
-        if "contenido" in row_dict and row_dict["contenido"] is not None:
-            if isinstance(row_dict["contenido"], bytes):
-                row_dict["contenido"] = base64.b64encode(row_dict["contenido"]).decode(
-                    "utf-8"
-                )
-            else:
-                row_dict["contenido"] = str(row_dict["contenido"])
+            if "contenido" in row_dict and row_dict["contenido"] is not None:
+                row_dict["contenido"] = base64.b64encode(row_dict["contenido"]).decode("utf-8")
 
-        # Serializar campos datetime
-        for campo in ["fecha_envio"]:
-            if campo in row_dict and isinstance(row_dict[campo], datetime):
-                row_dict[campo] = row_dict[
-                    campo
-                ].isoformat()  # o .strftime("%Y-%m-%d %H:%M:%S")
+            if "fecha_envio" in row_dict and isinstance(row_dict["fecha_envio"], datetime):
+                row_dict["fecha_envio"] = row_dict["fecha_envio"].isoformat()
 
-        res.append(row_dict)
-    if not res:
-        return Response(status_code=status.HTTP_204_NO_CONTENT)
+            res.append(row_dict)
 
-    return JSONResponse(content=res, status_code=status.HTTP_200_OK)
+        if not res:
+            return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+        return JSONResponse(content=res, status_code=status.HTTP_200_OK)
+
+    except DBAPIError as e:
+        raise HTTPException(status_code=500, detail="Error de base de datos: " + str(e.orig))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Error inesperado: " + str(e))
 
 
 @mensaje_router.post("/enviar/{id_receptor}")
@@ -56,11 +52,11 @@ async def crear_mensaje_privado(
     id_receptor: int,
     request: Request,
     response: Response,
-    db=Depends(s.obtener_conexion_sqlserver_dep),
+    db=Depends(obtener_db),
+    motor=Depends(obtener_motor_actual)
 ):
     body = await request.json()
 
-    # Convertir cadenas vacías a None
     for k, v in body.items():
         if isinstance(v, str) and v.strip() == "":
             body[k] = None
@@ -71,187 +67,125 @@ async def crear_mensaje_privado(
     if not id_emisor or not id_receptor or not contenido:
         raise HTTPException(status_code=400, detail="Faltan parámetros obligatorios")
 
-    # 🛡️ Encriptar contenido antes de enviar
     try:
-        contenido_encriptado = en.encriptar(contenido, en.DEFAULT_PASSPHRASE)
+        contenido_encriptado = en.encriptar(contenido, passphrase)
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail="Error al encriptar el mensaje: " + str(e)
-        )
-
-    sql = text(
-        """
-        EXEC sp_EnviarMensajePrivado 
-            @id_emisor = :id_emisor, 
-            @id_receptor = :id_receptor, 
-            @contenido = :contenido
-    """
-    )
+        raise HTTPException(status_code=500, detail="Error al encriptar: " + str(e))
 
     try:
-        with db.begin():
-            result = db.execute(
-                sql,
-                {
-                    "id_emisor": id_emisor,
-                    "id_receptor": id_receptor,
-                    "contenido": contenido_encriptado,
-                },
-            )
+        if motor == "mysql":
+            cursor = db.cursor()
+            cursor.callproc("sp_EnviarMensajePrivado", [id_emisor, id_receptor, contenido_encriptado])
+            db.commit()
+            cursor.close()
+        else:
+            sql = """
+                EXEC sp_EnviarMensajePrivado 
+                    @id_emisor = ?, 
+                    @id_receptor = ?, 
+                    @contenido = ?
+            """
+            cursor = db.cursor()
+            cursor.execute(sql, (id_emisor, id_receptor, contenido_encriptado))
+            db.commit()
+            cursor.close()
 
-            rows = result.mappings().all()
-            if not rows:
-                raise HTTPException(status_code=400, detail="No hay datos para leer.")
-
-            fila = rows[0]
-            if fila.get("exito") == 1:
-                return {"mensaje": "Mensaje enviado con éxito"}
-            else:
-                raise HTTPException(
-                    status_code=400, detail="No se pudo enviar el mensaje"
-                )
+        return {"mensaje": "Mensaje enviado con éxito"}
 
     except DBAPIError as e:
-        raise HTTPException(
-            status_code=500, detail="Error de base de datos: " + str(e.orig)
-        )
+        raise HTTPException(status_code=500, detail="DB error: " + str(e.orig))
     except Exception as e:
         raise HTTPException(status_code=500, detail="Error inesperado: " + str(e))
 
-import base64
 
 @mensaje_router.post("/read/{id_receptor}")
 async def leer_mensaje_privado(
     id_receptor: int,
     request: Request,
     response: Response,
-    db=Depends(s.obtener_conexion_sqlserver_dep),
+    db=Depends(obtener_db),
+    motor=Depends(obtener_motor_actual),
 ):
     body = await request.json()
-
     for k, v in body.items():
         if isinstance(v, str) and v.strip() == "":
             body[k] = None
 
     id_usuario = body.get("id_usuario")
-    clave = en.DEFAULT_PASSPHRASE  # Reutiliza tu clave simétrica (segura)
-
     if not id_usuario:
         raise HTTPException(status_code=400, detail="Faltan parámetros obligatorios")
 
-    sql = text(
-        """
-        EXEC sp_ObtenerMensajesPrivados 
-            @id_usuario1 = :id_usuario, 
-            @id_usuario2 = :id_receptor,
-            @clave =  :clave
-    """
-    )
-
     try:
-        with db.begin():
-            result = db.execute(
-                sql,
-                {"id_usuario": id_usuario, "id_receptor": id_receptor, "clave": clave},
-            )
-
-            rows = result.mappings().all()
-
-            if not rows:
-                return Response(status_code=status.HTTP_204_NO_CONTENT)
-
         mensajes = []
-        for row in rows:
-            try:
-                contenido_desencriptado = en.desencriptar_seguro(row["contenido"], clave)
 
-                # Si el contenido desencriptado es de tipo bytes, lo convertimos a base64
-                if isinstance(contenido_desencriptado, bytes):
-                    contenido_desencriptado = base64.b64encode(contenido_desencriptado).decode('utf-8')
+        if motor == "mysql":
+            cursor = db.cursor(dictionary=True)
+            cursor.callproc("sp_ObtenerMensajesPrivados", [id_usuario, id_receptor])
 
-            except Exception as e:
-                contenido_desencriptado = "[error al desencriptar]"
+            for result in cursor.stored_results():
+                rows = result.fetchall()
+                for row in rows:
+                    try:
+                        contenido = en.desencriptar(row["contenido"], passphrase)
+                    except Exception:
+                        contenido = "[error al desencriptar]"
 
-            fecha_envio = row["fecha_envio"]
-            if isinstance(fecha_envio, datetime):
-                fecha_envio = fecha_envio.isoformat()
+                    mensajes.append(
+                        {
+                            "id_mensaje": row["id_mensaje"],
+                            "id_emisor": row["id_emisor"],
+                            "emisor": row["emisor"],
+                            "contenido": contenido,
+                            "fecha_envio": (
+                                row["fecha_envio"].isoformat()
+                                if isinstance(row["fecha_envio"], datetime)
+                                else row["fecha_envio"]
+                            ),
+                            "estado_envio": row["estado_envio"],
+                        }
+                    )
+            cursor.close()
 
-            mensajes.append(
-                {
-                    "id_mensaje": row["id_mensaje"],
-                    "id_emisor": row["id_emisor"],
-                    "emisor": row["emisor"],
-                    "contenido": contenido_desencriptado,
-                    "fecha_envio": fecha_envio,
-                    "estado_envio": row["estado_envio"],
-                }
-            )
+        else:
+            sql = """
+                EXEC sp_ObtenerMensajesPrivados 
+                    @id_usuario1 = ?, 
+                    @id_usuario2 = ?
+            """
+            cursor = db.cursor()
+            cursor.execute(sql, (id_usuario, id_receptor))
+            columns = [column[0] for column in cursor.description]
+            rows = [dict(zip(columns, row)) for row in cursor.fetchall()]
+            cursor.close()
+
+            for row in rows:
+                try:
+                    contenido = en.desencriptar(row["contenido"], passphrase)
+                except Exception:
+                    contenido = "[error al desencriptar]"
+
+                mensajes.append(
+                    {
+                        "id_mensaje": row["id_mensaje"],
+                        "id_emisor": row["id_emisor"],
+                        "emisor": row["emisor"],
+                        "contenido": contenido,
+                        "fecha_envio": (
+                            row["fecha_envio"].isoformat()
+                            if isinstance(row["fecha_envio"], datetime)
+                            else row["fecha_envio"]
+                        ),
+                        "estado_envio": row["estado_envio"],
+                    }
+                )
+
+        if not mensajes:
+            return Response(status_code=status.HTTP_204_NO_CONTENT)
 
         return JSONResponse(content={"mensajes": mensajes}, status_code=200)
 
     except DBAPIError as e:
-        raise HTTPException(
-            status_code=500, detail="Error de base de datos: " + str(e.orig)
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail="Error inesperado: " + str(e))
-
-
-@mensaje_router.get("/read/chat/{id_chat}")
-async def leer_mensaje_chat(
-    id_chat: int,
-    request: Request,
-    response: Response,
-    db=Depends(s.obtener_conexion_sqlserver_dep),
-):
-    clave = en.passphrase  # Reutiliza tu clave simétrica (segura)
-
-    sql = text(
-        """
-        EXEC sp_LeerMensajesChat 
-            @id_chat = :id_chat
-    """
-    )
-
-    try:
-        with db.begin():
-            result = db.execute(
-                sql,
-                {"id_chat": id_chat},
-            )
-
-            rows = result.mappings().all()
-
-            if not rows:
-                return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-        mensajes = []
-        for row in rows:
-            try:
-                contenido_desencriptado = en.desencriptar(row["contenido"], clave)
-            except Exception as e:
-                contenido_desencriptado = "[error al desencriptar]"
-
-            fecha_envio = row["fecha_envio"]
-            if isinstance(fecha_envio, datetime):
-                fecha_envio = fecha_envio.isoformat()
-
-            mensajes.append(
-                {
-                    "id_mensaje": row["id_mensaje"],
-                    "emisor": row["emisor"],
-                    "contenido": contenido_desencriptado,
-                    "fecha_envio": fecha_envio,
-                    "estado_envio": row["estado_envio"],
-                }
-            )
-
-        return JSONResponse(content={"mensajes": mensajes}, status_code=200)
-
-    except DBAPIError as e:
-        raise HTTPException(
-            status_code=500, detail="Error de base de datos: " + str(e.orig)
-        )
+        raise HTTPException(status_code=500, detail="Error BD: " + str(e.orig))
     except Exception as e:
         raise HTTPException(status_code=500, detail="Error inesperado: " + str(e))
 
@@ -261,71 +195,120 @@ async def crear_mensaje_chat(
     id_chat: int,
     request: Request,
     response: Response,
-    db=Depends(s.obtener_conexion_sqlserver_dep),
+    db=Depends(obtener_db),
+    motor=Depends(obtener_motor_actual),
 ):
     body = await request.json()
-
     id_emisor = body.get("id_emisor")
     contenido_texto = body.get("contenido_texto")
 
-    # Validación de parámetros obligatorios
     if not id_emisor or not contenido_texto or not id_chat:
         raise HTTPException(status_code=400, detail="Faltan parámetros obligatorios")
 
-    # 🛡️ Encriptar el contenido antes de enviar
     try:
-        contenido_encriptado = en.encriptar(contenido_texto, en.passphrase)
-        if not isinstance(contenido_encriptado, bytes):
-            raise ValueError("El contenido encriptado no es tipo bytes.")
+        contenido_encriptado = en.encriptar(contenido_texto, passphrase)
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail="Error al encriptar el mensaje: " + str(e)
-        )
+        raise HTTPException(status_code=500, detail="Error al encriptar: " + str(e))
 
-    # Preparar y ejecutar el SP
-    sql = text(
-        """
-        EXEC sp_EnviarMensaje 
-            @id_emisor = :id_emisor, 
-            @id_chat = :id_chat, 
-            @contenido = :contenido
-    """
-    )
-
-    
     try:
-        # Ejecutar y capturar resultado
-        result = db.execute(
-            sql,
-            {
-                "id_emisor": id_emisor,
-                "id_chat": id_chat,
-                "contenido": contenido_encriptado
-            },
-        )
-        # Recuperar resultados (si el SP devuelve SELECT)
-        rows = result.mappings().all()
-
-        if not rows:
-            raise HTTPException(
-                status_code=204, detail="No se devolvieron datos del SP."
+        if motor == "mysql":
+            cursor = db.cursor()
+            cursor.callproc(
+                "sp_EnviarMensaje", [id_emisor, None, id_chat, contenido_encriptado]
             )
-
-        fila = rows[0]
-        if fila.get("exito") == 1:
-            db.commit()  # 💾 Confirmar si todo fue exitoso
-            return {"mensaje": "Mensaje enviado con éxito"}
+            db.commit()
+            cursor.close()
         else:
-            raise HTTPException(
-                status_code=500,
-                detail=fila.get("error") or "No se pudo enviar el mensaje",
-            )
+            sql = """
+                EXEC sp_EnviarMensaje 
+                    @id_emisor = ?, 
+                    @id_chat = ?, 
+                    @contenido = ?
+            """
+            cursor = db.cursor()
+            cursor.execute(sql, (id_emisor, id_chat, contenido_encriptado))
+            db.commit()
+            cursor.close()
+
+        return {"mensaje": "Mensaje enviado con éxito"}
 
     except DBAPIError as e:
-        db.rollback()
-        raise HTTPException(
-            status_code=500, detail="Error de base de datos: " + str(e.orig)
-        )
+        raise HTTPException(status_code=500, detail="DB error: " + str(e.orig))
     except Exception as e:
-        db.rollback()
+        raise HTTPException(status_code=500, detail="Error inesperado: " + str(e))
+
+
+@mensaje_router.get("/read/chat/{id_chat}")
+async def leer_mensaje_chat(
+    id_chat: int,
+    request: Request,
+    response: Response,
+    db=Depends(obtener_db),
+    motor=Depends(obtener_motor_actual),
+):
+    try:
+        mensajes = []
+
+        if motor == "mysql":
+            cursor = db.cursor(dictionary=True)
+            cursor.callproc("sp_LeerMensajesChat", [id_chat])
+            for result in cursor.stored_results():
+                rows = result.fetchall()
+                for row in rows:
+                    try:
+                        contenido = en.desencriptar(row["contenido"], passphrase)
+                    except Exception:
+                        contenido = "[error al desencriptar]"
+
+                    mensajes.append(
+                        {
+                            "id_mensaje": row["id_mensaje"],
+                            "emisor": row["emisor"],
+                            "contenido": contenido,
+                            "fecha_envio": (
+                                row["fecha_envio"].isoformat()
+                                if isinstance(row["fecha_envio"], datetime)
+                                else row["fecha_envio"]
+                            ),
+                            "estado_envio": row["estado_envio"],
+                        }
+                    )
+            cursor.close()
+
+        else:
+            sql = "EXEC sp_LeerMensajesChat @id_chat = ?"
+            cursor = db.cursor()
+            cursor.execute(sql, (id_chat,))
+            columns = [column[0] for column in cursor.description]
+            rows = [dict(zip(columns, row)) for row in cursor.fetchall()]
+            cursor.close()
+
+            for row in rows:
+                try:
+                    contenido = en.desencriptar(row["contenido"], passphrase)
+                except Exception:
+                    contenido = "[error al desencriptar]"
+
+                mensajes.append(
+                    {
+                        "id_mensaje": row["id_mensaje"],
+                        "emisor": row["emisor"],
+                        "contenido": contenido,
+                        "fecha_envio": (
+                            row["fecha_envio"].isoformat()
+                            if isinstance(row["fecha_envio"], datetime)
+                            else row["fecha_envio"]
+                        ),
+                        "estado_envio": row["estado_envio"],
+                    }
+                )
+
+        if not mensajes:
+            return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+        return JSONResponse(content={"mensajes": mensajes}, status_code=200)
+
+    except DBAPIError as e:
+        raise HTTPException(status_code=500, detail="Error BD: " + str(e.orig))
+    except Exception as e:
         raise HTTPException(status_code=500, detail="Error inesperado: " + str(e))
