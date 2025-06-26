@@ -8,7 +8,7 @@ Content-Type: application/json
 }
 
 ###
-GET {{uriUsuario}}/read/9
+GET {{uriUsuario}}/read/7
 Content-Type: application/json
 
 ###

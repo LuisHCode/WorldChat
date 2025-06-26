@@ -344,7 +344,12 @@ BEGIN
              FROM Mensaje m
              WHERE (m.id_emisor = u.id_usuario AND m.id_receptor = @id_usuario)
                 OR (m.id_emisor = @id_usuario AND m.id_receptor = u.id_usuario)
-             ORDER BY m.fecha_envio DESC) AS ultimo_mensaje
+             ORDER BY m.fecha_envio DESC) AS ultimo_mensaje,
+             (SELECT TOP 1 m.id_mensaje 
+             FROM Mensaje m
+             WHERE (m.id_emisor = u.id_usuario AND m.id_receptor = @id_usuario)
+                OR (m.id_emisor = @id_usuario AND m.id_receptor = u.id_usuario)
+             ORDER BY m.fecha_envio DESC) AS id_mensaje
         FROM 
             Usuario u
         JOIN
@@ -352,7 +357,9 @@ BEGIN
                 ON u.id_usuario = m.id_receptor OR u.id_usuario = m.id_emisor
         WHERE
             (m.id_emisor = @id_usuario OR m.id_receptor = @id_usuario)
-            AND u.id_usuario != @id_usuario;
+            AND u.id_usuario != @id_usuario
+        ORDER BY
+            id_mensaje DESC        
     END TRY
     BEGIN CATCH
         PRINT ERROR_MESSAGE()
