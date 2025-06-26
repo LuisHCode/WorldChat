@@ -13,7 +13,7 @@ from conexion.conexion_sqlserver import obtener_conexion_sqlserver
 from logica.app.encriptador import desencriptar, passphrase
 
 
-def verificar_credenciales(identificador: str, pwd_plano: str, db=None) -> int:
+def verificar_credenciales(identificador: str, pwd_plano: str, db=None):
     """Comprueba si la contraseña enviada coincide con la almacenada.
 
     Args:
@@ -23,7 +23,7 @@ def verificar_credenciales(identificador: str, pwd_plano: str, db=None) -> int:
             una conexión nueva y se cierra al finalizar.
 
     Returns:
-        int: 1 si la contraseña es correcta, 0 en cualquier otro caso.
+        int | None: id_usuario si la contraseña es correcta, None en cualquier otro caso.
     """
 
     # ---------------------------------------------------
@@ -40,7 +40,7 @@ def verificar_credenciales(identificador: str, pwd_plano: str, db=None) -> int:
         # 2. Traer solo la columna "contrasenna" para el usuario
         # ---------------------------------------------------
         sql = """
-            SELECT TOP (1) contrasenna
+            SELECT TOP (1) id_usuario, contrasenna
             FROM   Usuario
             WHERE  correo   = ?
                OR  telefono = ?
@@ -50,10 +50,11 @@ def verificar_credenciales(identificador: str, pwd_plano: str, db=None) -> int:
         row = cursor.fetchone()
 
         # Usuario no encontrado o sin contraseña
-        if row is None or row[0] is None:
-            return 0
+        if row is None or row[1] is None:
+            return None
 
-        contrasenna_cifrada: bytes = row[0]
+        id_usuario = row[0]
+        contrasenna_cifrada: bytes = row[1]
         
         
         
@@ -70,12 +71,12 @@ def verificar_credenciales(identificador: str, pwd_plano: str, db=None) -> int:
         try:
             contrasenna_desencriptada = desencriptar(contrasenna_cifrada, passphrase)
         except Exception:
-            return 0
+            return None
 
-        return 1 if contrasenna_desencriptada == pwd_plano else 0
+        return id_usuario if contrasenna_desencriptada == pwd_plano else None
 
     except Exception:
-        return 0
+        return None
 
     finally:
         if nueva_sesion:
@@ -84,7 +85,7 @@ def verificar_credenciales(identificador: str, pwd_plano: str, db=None) -> int:
        
             
 
-def verificar_credencialesmysql(identificador: str, pwd_plano: str, db=None) -> int:
+def verificar_credencialesmysql(identificador: str, pwd_plano: str, db=None):
     """Comprueba si la contraseña enviada coincide con la almacenada (MySQL).
 
     Args:
@@ -111,7 +112,7 @@ def verificar_credencialesmysql(identificador: str, pwd_plano: str, db=None) -> 
         # ---------------------------------------------------
         sql = (
             """
-            SELECT contrasenna
+            SELECT id_usuario, contrasenna
             FROM   Usuario
             WHERE  correo   = %s
                OR  telefono = %s
@@ -123,10 +124,11 @@ def verificar_credencialesmysql(identificador: str, pwd_plano: str, db=None) -> 
         row = cursor.fetchone()
 
         # Usuario no encontrado o sin contraseña
-        if row is None or row[0] is None:
-            return 0
+        if row is None or row[1] is None:
+            return None
 
-        contrasenna_cifrada: bytes = row[0]
+        id_usuario = row[0]
+        contrasenna_cifrada: bytes = row[1]
 
         # ---------------------------------------------------
         # 3. Desencriptar de forma segura
@@ -134,13 +136,11 @@ def verificar_credencialesmysql(identificador: str, pwd_plano: str, db=None) -> 
         try:
             contrasenna_desencriptada = desencriptar(contrasenna_cifrada, passphrase)
         except Exception:
-            return 0
+            return None
 
-        return 1 if contrasenna_desencriptada == pwd_plano else 0
-
+        return id_usuario if contrasenna_desencriptada == pwd_plano else None
     except SQLAlchemyError:
-        return 0
-
+        return None
     finally:
         if nueva_conexion:
             db.close()

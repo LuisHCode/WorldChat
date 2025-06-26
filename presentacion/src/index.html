@@ -1,49 +1,81 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WorldChat</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container">
-    <!-- Sidebar with contacts -->
-    <div class="sidebar">
-        <div class="header">
-            <div class="user-img">
-                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=User" alt="User" class="avatar">
+    <!-- Login/Signup Screen -->
+    <div class="auth-screen" id="auth-screen">
+        <div class="auth-container">
+            <div class="auth-tabs">
+                <button class="auth-tab active" id="login-tab">Iniciar Sesión</button>
+                <button class="auth-tab" id="signup-tab">Registrarse</button>
             </div>
-            <h3>WorldChat</h3>
-        </div>
-        <div class="search">
-            <input type="text" placeholder="Search or start new chat">
-        </div>
-        <div class="contacts" id="contacts">
-            <!-- Contacts will be added here by JavaScript -->
+            
+            <div class="auth-form" id="login-form">
+                <input type="text" id="login-argumento" placeholder="Usuario/Email/Teléfono">
+                <input type="password" id="login-password" placeholder="Contraseña">
+                <button id="login-button">Ingresar</button>
+            </div>
+            
+            <div class="auth-form hidden" id="signup-form">
+                <input type="text" id="signup-username" placeholder="Nombre de usuario" required>
+                <input type="text" id="signup-fullname" placeholder="Nombre completo" required>
+                <input type="text" id="signup-phone" placeholder="Teléfono" required>
+                <input type="email" id="signup-email" placeholder="Email" required>
+                <input type="password" id="signup-password" placeholder="Contraseña" required>
+                <small class="password-hint">La contraseña debe tener al menos 8 caracteres, mayúsculas, minúsculas y un símbolo</small>
+                <input type="text" id="signup-photo" placeholder="URL foto de perfil (opcional)">
+                <button id="signup-button">Crear Cuenta</button>
+            </div>
         </div>
     </div>
 
-    <!-- Main chat area -->
-    <div class="chat">
-        <div class="chat-header">
-            <div class="contact-info">
-                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=default" alt="Contact" class="avatar">
-                <div class="contact-name">
-                    <h4 id="current-chat-name">Select a chat</h4>
-                    <small>online</small>
+    <!-- Main App (hidden by default) -->
+    <div class="container hidden" id="app-container">
+        <!-- Resto de tu HTML original -->
+        <div class="sidebar">
+            <div class="header">
+                <div class="user-img">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=User" alt="User" class="avatar">
                 </div>
+                <h3>WorldChat</h3>
+                <button id="logout-button" title="Cerrar sesión">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+            <div class="search">
+                <input type="text" placeholder="Search or start new chat">
+            </div>
+            <div class="contacts" id="contacts">
+                <!-- Contacts will be added here by JavaScript -->
             </div>
         </div>
-        <div class="chat-messages" id="chat-messages">
-            <!-- Messages will be added here by JavaScript -->
-        </div>
-        <div class="chat-input">
-            <input type="text" id="message-input" placeholder="Type a message">
-            <button id="send-button">Send</button>
+
+        <div class="chat">
+            <div class="chat-header">
+                <div class="contact-info">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=default" alt="Contact" class="avatar">
+                    <div class="contact-name">
+                        <h4 id="current-chat-name">Select a chat</h4>
+                        <small>online</small>
+                    </div>
+                </div>
+            </div>
+            <div class="chat-messages" id="chat-messages">
+                <!-- Messages will be added here by JavaScript -->
+            </div>
+            <div class="chat-input">
+                <input type="text" id="message-input" placeholder="Type a message">
+                <button id="send-button">Send</button>
+            </div>
         </div>
     </div>
-</div>
+    
     <script src="script.js"></script>
-  </body>
+</body>
 </html>

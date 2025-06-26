@@ -4,7 +4,7 @@ POST {{uriUsuario}}/contactos
 Content-Type: application/json
 
 {
-  "id_usuario": 5
+  "id_usuario": 9
 }
 
 ###
@@ -12,8 +12,8 @@ POST {{uriUsuario}}/login
 Content-Type: application/json
 
 {
-    "argumento": "0000000000", 
-    "passw": "mog0Lik0$"  
+    "argumento": "12456532", 
+    "passw": "123456"  
 }
 
 ###

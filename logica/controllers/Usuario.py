@@ -297,8 +297,9 @@ async def login_usuario(request: Request):
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Faltan parámetros")
 
         # Llamar a la función para verificar las credenciales
-        if login.verificar_credenciales(argumento, passw) == 1:
-            return JSONResponse(status_code=status.HTTP_200_OK, content={"message": "Login exitoso"})
+        id_usuario = login.verificar_credenciales(argumento, passw)
+        if id_usuario:
+            return JSONResponse(status_code=status.HTTP_200_OK, content={"message": "Login exitoso", "id_usuario": id_usuario})
         else:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciales inválidas")
 

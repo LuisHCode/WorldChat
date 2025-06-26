@@ -7,7 +7,7 @@ POST {{uriMensaje}}/enviar/5
 Content-Type: application/json
 
 {
-  "id_emisor": 7,
+  "id_emisor": 10,
   "contenido": "probando el DESC"
 }
 
