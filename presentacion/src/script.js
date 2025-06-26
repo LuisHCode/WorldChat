@@ -70,7 +70,7 @@ async function loadContacts() {
     return;
   }
 
-  try {    
+  try {
     const response = await fetch(
       "http://localhost:8000/api/usuario/contactos",
       {
@@ -96,154 +96,266 @@ async function loadContacts() {
       }));
 
       // Llamar a la función que renderiza los contactos
-      renderContacts(true);
+      renderContacts();
     } else {
       console.error("Los datos no son un array:", data);
     }
   } catch (error) {
-    renderContacts(false);
+    renderContacts();
     console.error("Error al cargar los contactos:", error);
   }
 }
 
-// Función que renderiza los contactos en el HTML
-function renderContacts(hayContactos) {
-  if (hayContactos) {
-    const contactsContainer = document.getElementById("contacts");
-    contactsContainer.innerHTML = contacts
-      .map(
-        (contact) => `
-    <div class="contact" data-id="${contact.id}">
-        <img src="${contact.avatar}" alt="${contact.name}" class="avatar">
-        <div class="contact-info">
-            <h4>${contact.name}</h4>
-            <small>${contact.lastMessage}</small>
-        </div>
-    </div>
-  `
-      )
-      .join("");
-  } else {
-    const contactsContainer = document.getElementById("contacts");
-    contactsContainer.innerHTML = contacts
-      .map(
-        (contact) => `
-    <div class="contact" data-id="${contact.id}">
+// Buscar contactos en tiempo real
+async function setupSearch() {
+  const searchInput = document.querySelector(".search input");
 
-    </div>
-  `
-      )
-      .join("");
-  }
+  searchInput.addEventListener("input", async (e) => {
+    const searchTerm = e.target.value.trim();
 
-  // Agregar eventos de click a los contactos
-  document.querySelectorAll(".contact").forEach((contact) => {
-    contact.addEventListener("click", () => {
-      const contactId = parseInt(contact.dataset.id);
+    if (searchTerm.length > 0) {
+      try {
+        const response = await fetch(`${API_BASE}/filtro`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            argumento: searchTerm,
+            id_usuario: idUsuarioActual,
+          }),
+        });
 
-      loadChat(contactId);
+        const data = await response.json();
 
-      // Actualizar contacto activo
-      document
-        .querySelectorAll(".contact")
-        .forEach((c) => c.classList.remove("active"));
-      contact.classList.add("active");
-    });
+        if (Array.isArray(data)) {
+          // Mapea los resultados igual que en loadContacts
+          const searchResults = data.map((contact) => ({
+            id: contact.id_usuario,
+            name: contact.nombre_usuario,
+            avatar:
+              contact.foto_perfil ||
+              "https://api.dicebear.com/7.x/avataaars/svg?seed=default",
+            lastMessage: contact.ultimo_mensaje,
+          }));
+
+          // Renderiza los resultados temporalmente
+          renderContacts(searchResults);
+        }
+      } catch (error) {
+        console.error("Error al buscar contactos:", error);
+      }
+    } else {
+      // Si el campo está vacío, vuelve a cargar los contactos normales
+      loadContacts();
+    }
   });
 }
 
-// Cargar los mensajes de un chat específico desde el backend
+// Modifica renderContacts para aceptar una lista personalizada
+function renderContacts(contactsList = contacts) {
+  const contactsContainer = document.getElementById("contacts");
+
+  // 1. Validar que contactsList sea un array
+  if (!Array.isArray(contactsList)) {
+    console.error("contactsList no es un array:", contactsList);
+    contactsContainer.innerHTML =
+      '<div class="no-contacts">No hay contactos disponibles</div>';
+    return;
+  }
+
+  // 2. Validar array vacío
+  if (contactsList.length === 0) {
+    contactsContainer.innerHTML =
+      '<div class="no-contacts">No se encontraron contactos</div>';
+    return;
+  }
+
+  // 3. Mapear sólo si hay datos válidos
+  try {
+    contactsContainer.innerHTML = contactsList
+      .filter((contact) => contact && contact.id) // Filtra contactos inválidos
+      .map(
+        (contact) => `
+                <div class="contact" data-id="${contact.id}">
+                    <img src="${
+                      contact.avatar ||
+                      "https://api.dicebear.com/7.x/avataaars/svg?seed=default"
+                    }" 
+                         alt="${contact.name || "Contacto"}" 
+                         class="avatar">
+                    <div class="contact-info">
+                        <h4>${contact.name || "Usuario"}</h4>
+                        <small>${contact.lastMessage || " "}</small>
+                    </div>
+                </div>
+            `
+      )
+      .join("");
+    // 4. Agregar event listeners
+    document.querySelectorAll(".contact").forEach((contact) => {
+      contact.addEventListener("click", () => {
+        const contactId = parseInt(contact.dataset.id);
+        if (!isNaN(contactId)) {
+          currentChat = loadUser(contactId);
+          loadChat(contactId);
+          document
+            .querySelectorAll(".contact")
+            .forEach((c) => c.classList.remove("active"));
+          contact.classList.add("active");
+        }
+      });
+    });
+  } catch (error) {
+    console.error("Error al renderizar contactos:", error);
+    contactsContainer.innerHTML =
+      '<div class="error-contacts">Error al cargar contactos</div>';
+  }
+}
+// Agregar eventos de click a los contactos
+document.querySelectorAll(".contact").forEach((contact) => {
+  contact.addEventListener("click", () => {
+    const contactId = parseInt(contact.dataset.id);
+
+    loadChat(contactId);
+
+    // Actualizar contacto activo
+    document
+      .querySelectorAll(".contact")
+      .forEach((c) => c.classList.remove("active"));
+    contact.classList.add("active");
+  });
+});
+
+// Agregar eventos de click a los contactos
+document.querySelectorAll(".contact").forEach((contact) => {
+  contact.addEventListener("click", () => {
+    const contactId = parseInt(contact.dataset.id);
+
+    loadChat(contactId);
+
+    // Actualizar contacto activo
+    document
+      .querySelectorAll(".contact")
+      .forEach((c) => c.classList.remove("active"));
+    contact.classList.add("active");
+  });
+});
+// Modifica la función loadChat para que limpie el search input y recargue contactos
 async function loadChat(contactId) {
-  currentChat = await loadUser(contactId); // Esperar a que loadUser() se resuelva
+  try {
+    // 1. Limpiar el input de búsqueda
+    const searchInput = document.querySelector(".search input");
+    searchInput.value = "";
 
-  const contact = contacts.find((c) => c.id === contactId);
-  document.getElementById("current-chat-name").textContent = contact.name;
+    // 2. Recargar contactos (para volver a la lista completa)
+    await loadContacts();
 
-  // Actualizar el avatar del contacto en la cabecera
-  const headerAvatar = document.querySelector(".chat-header .avatar");
-  headerAvatar.src =
-    contact.avatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=default";
-  headerAvatar.alt = contact.name;
+    // 3. Cargar el chat normalmente
+    currentChat = await loadUser(contactId);
 
-  const chatMessages = document.getElementById("chat-messages");
-  chatMessages.innerHTML = ""; // Limpiar los mensajes previos
+    if (!currentChat || !currentChat.length) {
+      console.error("No se pudo cargar el usuario del chat");
+      return;
+    }
 
-  // Cargar los mensajes desde el backend (ruta /api/mensaje/read/{id_receptor})
+    document.getElementById("current-chat-name").textContent =
+      currentChat[0].nombre_usuario;
+
+    const headerAvatar = document.querySelector(".chat-header .avatar");
+    headerAvatar.src =
+      currentChat[0].foto_perfil ||
+      "https://api.dicebear.com/7.x/avataaars/svg?seed=default";
+    headerAvatar.alt = currentChat[0].nombre_usuario;
+
+    const chatMessages = document.getElementById("chat-messages");
+    chatMessages.innerHTML = "";
+
+    try {
+      const response = await fetch(
+        `http://localhost:8000/api/mensaje/read/${currentChat[0].id_usuario}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id_usuario: currentUser[0].id_usuario }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.mensajes && data.mensajes.length > 0) {
+        chatMessages.innerHTML = data.mensajes
+          .map(
+            (message) => `
+          <div class="message ${
+            message.id_emisor === currentUser[0].id_usuario
+              ? "sent"
+              : "received"
+          }">
+            ${message.contenido}
+            <div class="message-time">${message.fecha_envio}</div>
+          </div>
+        `
+          )
+          .join("");
+      }
+    } catch (error) {
+      console.error("Error al cargar mensajes:", error);
+    }
+
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  } catch (error) {
+    console.error("Error en loadChat:", error);
+  }
+}
+// Enviar mensaje al backend
+async function sendMessage(text) {
+  if (!currentChat || !text.trim()) return;
+
   try {
     const response = await fetch(
-      `http://localhost:8000/api/mensaje/read/${contactId}`,
+      `http://localhost:8000/api/mensaje/enviar/${currentChat[0].id_usuario}`,
       {
-        method: "POST", // Usamos POST para enviar el id_emisor en el cuerpo
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          id_usuario: currentUser[0].id_usuario, // Ahora usamos currentUser[0].id_usuario
+          id_emisor: idUsuarioActual,
+          contenido: text,
         }),
       }
     );
 
     const data = await response.json();
 
-    chatMessages.innerHTML = data.mensajes
-      .map(
-        (message) => `
-      <div class="message ${
-        message.id_emisor === currentUser[0].id_usuario ? "sent" : "received"
-      }">
-          ${message.contenido}
-          <div class="message-time">${message.fecha_envio}</div>
-      </div>
-    `
-      )
-      .join("");
+    if (response.ok) {
+      // 1. Recargar SOLO los mensajes del chat actual
+      await loadChat(currentChat[0].id_usuario);
 
-    // Scroll hacia el final del chat
-    chatMessages.scrollTop = chatMessages.scrollHeight;
+      // 2. Limpiar el input
+      document.getElementById("message-input").value = "";
+
+      // 3. Opcional: Hacer scroll al final
+      const chatMessages = document.getElementById("chat-messages");
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    } else {
+      console.error("Error al enviar mensaje:", data);
+    }
   } catch (error) {
-    console.error("Error al cargar mensajes:", error);
+    console.error("Error al enviar mensaje:", error);
   }
 }
 
-// Enviar mensaje al backend
-async function sendMessage(text) {
-  currentChat = await loadUser(idUsuarioActual);
-  if (!currentChat || !text.trim()) return;
-
-  const newMessage = {
-    text: text,
-    sent: true,
-    time: new Date().toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    }),
-  };
-
-  // Enviar mensaje al backend (FastAPI)
-  fetch(
-    `http://localhost:8000/api/mensaje/enviar/${currentChat[0].id_usuario}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        id_emisor: currentUser[0].id_usuario, // ID del emisor
-        contenido: text, // El contenido del mensaje
-      }),
-    }
-  )
-    .then((response) => response.json())
-    .then((data) => {
-      console.log("Mensaje enviado con éxito", data);
-      loadChat(currentChat[0].id_usuario); // Cargar los mensajes nuevamente después de enviar
-    })
-    .catch((error) => {
-      console.error("Error al enviar mensaje:", error);
-    });
-}
-
+// Elimina estas líneas redundantes (ya están en DOMContentLoaded)
+document
+  .getElementById("send-button")
+  .addEventListener("click", sendMessageHandler);
+document.getElementById("message-input").addEventListener("keypress", (e) => {
+  if (e.key === "Enter") sendMessageHandler();
+});
 async function refresh() {
+  console.log("CURRENT CHAT CURRENT CHAT ACTUAL PERO REFRESH", currentChat);
   console.log(
     "VIENDO QUE TIENE EL LOCALSTORAGE",
     localStorage.getItem("idUsuarioActual")
@@ -255,13 +367,12 @@ async function refresh() {
     hideApp();
     return;
   }
-  currentChat = await loadUser(idUsuarioActual);
+  currentUser = await loadUser(idUsuarioActual);
   console.log(currentChat);
   loadContacts();
   showApp();
 }
 
-// Login function
 async function login(argumento, password) {
   try {
     const response = await fetch(LOGIN_ENDPOINT, {
@@ -278,11 +389,13 @@ async function login(argumento, password) {
     const data = await response.json();
 
     if (response.ok) {
-      // Asumimos que el login fue exitoso
-
       guardarIdUsuarioActual(data["id_usuario"]);
-      console.log("usuario que esta ahi no se donde", idUsuarioActual);
-
+      
+      // Resetear el estado del chat antes de mostrar la app
+      currentChat = [];
+      document.getElementById("current-chat-name").textContent = "Select a chat";
+      document.getElementById("chat-messages").innerHTML = "";
+      
       refresh();
       showApp();
     } else {
@@ -329,21 +442,35 @@ function guardarIdUsuarioActual(valor) {
   localStorage.setItem("idUsuarioActual", idUsuarioActual);
 }
 
-// Logout function
 function logout() {
   currentUser = [];
   currentChat = [];
   guardarIdUsuarioActual(0);
   contacts = [];
+  
+  // Limpiar la interfaz del chat
+  document.getElementById("current-chat-name").textContent = "Select a chat";
+  document.getElementById("chat-messages").innerHTML = "";
+  document.querySelector(".chat-header .avatar").src = "https://api.dicebear.com/7.x/avataaars/svg?seed=default";
+  
+  // Remover clase 'active' de todos los contactos
+  document.querySelectorAll(".contact").forEach(c => c.classList.remove("active"));
+  
   hideApp();
   clearLoginForm();
-  refresh();
 }
 
-// Show/hide app
 function showApp() {
   authScreen.classList.add("hidden");
   appContainer.classList.remove("hidden");
+  
+  // Resetear el chat al estado inicial
+  document.getElementById("current-chat-name").textContent = "Select a chat";
+  document.getElementById("chat-messages").innerHTML = "";
+  document.querySelector(".chat-header .avatar").src = "https://api.dicebear.com/7.x/avataaars/svg?seed=default";
+  
+  // Asegurarse que ningún contacto aparece como activo
+  document.querySelectorAll(".contact").forEach(c => c.classList.remove("active"));
 }
 
 function hideApp() {
@@ -415,6 +542,8 @@ logoutButton.addEventListener("click", logout);
 // Initialize app
 document.addEventListener("DOMContentLoaded", () => {
   refresh();
+  loadContacts();
+  setupSearch();
   document.getElementById("send-button").addEventListener("click", () => {
     const input = document.getElementById("message-input");
     sendMessage(input.value);

@@ -18,6 +18,77 @@ import re
 usuario_router = APIRouter(prefix="/api/usuario")
 
 
+@usuario_router.post("/filtro")
+async def usuario_read_filtro(
+    request: Request, response: Response, db=Depends(s.obtener_conexion_sqlserver_dep)
+):
+    body = await request.json()
+
+    # SQL con parámetros nombrados
+    sql = text(
+        """
+        EXEC sp_buscarUsuarios 
+            @argumento = :argumento,
+            @id_usuario = :id_usuario
+    """
+    )
+
+    try:
+        # Ejecutamos la consulta con el parámetro `id_usuario`
+        result = db.execute(
+            sql,
+            {"argumento": body.get("argumento"), "id_usuario": body.get("id_usuario")},
+        )
+
+        # Asegurarse de que el resultado contiene datos antes de intentar acceder a ellos
+        rows = result.mappings().all()
+
+        if not rows:
+            return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+        res = []
+        for row in rows:
+            row_dict = dict(row)
+
+            # Verificar si el 'ultimo_mensaje' no es None antes de intentar usar .hex()
+            if row["ultimo_mensaje"] is not None:
+                try:
+                    # Desencriptar el mensaje
+                    contenido_desencriptado = en.desencriptar(
+                        row["ultimo_mensaje"], passphrase
+                    )
+                    
+                    # Si el contenido desencriptado es de tipo bytes, convertirlo a base64
+                    if isinstance(contenido_desencriptado, bytes):
+                        print("Contenido desencriptado (bytes), convirtiendo a base64...")
+                        contenido_desencriptado = base64.b64encode(
+                            contenido_desencriptado
+                        ).decode("utf-8")
+
+                except Exception:
+                    contenido_desencriptado = "[error al desencriptar]"
+                
+                # Asignamos el valor desencriptado a 'ultimo_mensaje'
+                row_dict["ultimo_mensaje"] = contenido_desencriptado
+
+            else:
+                # Si 'ultimo_mensaje' es None, lo dejamos como None o lo que sea necesario
+                row_dict["ultimo_mensaje"] = None
+
+            # Añadimos el diccionario de datos al resultado
+            res.append(row_dict)
+
+        return JSONResponse(content=res, status_code=status.HTTP_200_OK)
+
+    except DBAPIError as e:
+        # Error de base de datos
+        raise HTTPException(
+            status_code=500, detail="Error de base de datos: " + str(e.orig)
+        )
+    except Exception as e:
+        # Cualquier otro error inesperado
+        raise HTTPException(status_code=500, detail="Error inesperado: " + str(e))
+
 @usuario_router.post("/contactos")
 async def usuario_read_contacts(
     request: Request, response: Response, db=Depends(s.obtener_conexion_sqlserver_dep)
@@ -277,8 +348,7 @@ async def update_usuario(
         raise HTTPException(status_code=500, detail="Error inesperado: " + str(e))
 
 
-
-# ACA PARA PROBAR EL LOGIN 
+# ACA PARA PROBAR EL LOGIN
 
 
 @usuario_router.post("/login")
@@ -294,15 +364,26 @@ async def login_usuario(request: Request):
 
         # Validar que ambos parámetros estén presentes
         if not argumento or not passw:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Faltan parámetros")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Faltan parámetros"
+            )
 
         # Llamar a la función para verificar las credenciales
         id_usuario = login.verificar_credenciales(argumento, passw)
         if id_usuario:
-            return JSONResponse(status_code=status.HTTP_200_OK, content={"message": "Login exitoso", "id_usuario": id_usuario})
+            return JSONResponse(
+                status_code=status.HTTP_200_OK,
+                content={"message": "Login exitoso", "id_usuario": id_usuario},
+            )
         else:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciales inválidas")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Credenciales inválidas",
+            )
 
     except Exception as e:
         # Si ocurre un error, devolver una excepción interna
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Error al procesar la solicitud: " + str(e))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Error al procesar la solicitud: " + str(e),
+        )

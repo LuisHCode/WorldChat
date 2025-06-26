@@ -303,3 +303,10 @@
 #logout-button:hover {
     color: #00a884;
 }
+
+.no-messages {
+  color: #8696a0;
+  text-align: center;
+  padding: 20px;
+  font-size: 14px;
+}

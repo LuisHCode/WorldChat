@@ -4,7 +4,16 @@ POST {{uriUsuario}}/contactos
 Content-Type: application/json
 
 {
-  "id_usuario": 9
+  "id_usuario": 10
+}
+
+###
+POST {{uriUsuario}}/filtro
+Content-Type: application/json
+
+{
+    "argumento": "To", 
+    "id_usuario": "6"  
 }
 
 ###
@@ -17,7 +26,7 @@ Content-Type: application/json
 }
 
 ###
-GET {{uriUsuario}}/read/10
+GET {{uriUsuario}}/read/9
 Content-Type: application/json
 
 ###
