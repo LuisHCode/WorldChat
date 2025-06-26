@@ -17,11 +17,11 @@ POST {{uriUsuario}}/create
 Content-Type: application/json
 
 {
-  "nombre_usuario": "PRUEBA",
-  "nombre_completo": "Señor prueba",
-  "telefono": "12456532",
-  "correo": "elpruebas@gmail.com",
-  "contrasenna": "123456",
+  "nombre_usuario": "probandocontra",
+  "nombre_completo": "seguridadcontra",
+  "telefono": "0000000000",
+  "correo": "contraprueba@gmail.com",
+  "contrasenna": "mog0Lik0$",
   "foto_perfil": "",
   "estado": "Activo"
 }

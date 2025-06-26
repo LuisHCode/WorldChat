@@ -11,6 +11,7 @@ from conexion import conexion_sqlserver as s
 from logica.app import encriptador as en
 from logica.app.encriptador import passphrase, encriptar
 from conexion.conexion_activa import obtener_db, obtener_motor_actual
+import re
 
 
 usuario_router = APIRouter(prefix="/api/usuario")
@@ -137,6 +138,20 @@ async def create_usuario(
     for k, v in body.items():
         if isinstance(v, str) and v.strip() == "":
             body[k] = None
+
+    # Validar contraseña
+    if "contrasenna" in body and body["contrasenna"]:
+        password = body["contrasenna"]
+        if (
+            len(password) < 8
+            or not re.search(r"[A-Z]", password)
+            or not re.search(r"[a-z]", password)
+            or not re.search(r"[^A-Za-z0-9]", password)
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail="La contraseña debe tener al menos 8 caracteres, incluir mayúsculas, minúsculas y un símbolo.",
+            )
 
     # Encriptar contraseña
     if "contrasenna" in body and body["contrasenna"]:
