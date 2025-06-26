@@ -11,6 +11,9 @@ import base64
 from conexion import conexion_sqlserver as s
 from logica.app import encriptador as en
 from logica.app.encriptador import desencriptar_seguro, passphrase
+from logica.app import encriptador as en
+from logica.app.encriptador import passphrase
+from conexion.conexion_activa import obtener_db, obtener_motor_actual
 
 
 mensaje_router = APIRouter(prefix="/api/mensaje")

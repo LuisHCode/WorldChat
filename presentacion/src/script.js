@@ -198,7 +198,7 @@ async function refresh() {
   currentChat = await loadUser(3);  
   loadContacts();
 }
-
+    
 // Inicializar la aplicación
 document.addEventListener("DOMContentLoaded", async () => {
   // Primero, cargamos el usuario

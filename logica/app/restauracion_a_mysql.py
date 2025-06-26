@@ -1,7 +1,10 @@
+import sys, os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+
 import pandas as pd
 from conexion.conexion_mysql import obtener_conexion_mysql
-from .encriptador import encriptar
-from .crear_estructura_mysql import crear_estructura_si_no_existe_mysql
+from logica.app.encriptador import encriptar
+from logica.app.crear_estructura_mysql import crear_estructura_si_no_existe_mysql
 import datetime
 
 # --- Configuración ---

@@ -1,7 +1,10 @@
+import sys, os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+
 import pandas as pd
 from conexion.conexion_sqlserver import obtener_conexion_sqlserver
-from .encriptador import desencriptar
-from .encriptador import desencriptar_seguro, passphrase
+from logica.app.encriptador import desencriptar
+from logica.app.encriptador import desencriptar_seguro, passphrase
 
 
 # --- Configuración ---
