@@ -3,11 +3,11 @@
 @uriChat = http://localhost:8000/api/chat
 @uriParticipante = http://localhost:8000/api/participante
 
-POST {{uriMensaje}}/enviar/3
+POST {{uriMensaje}}/enviar/2
 Content-Type: application/json
 
 {
-  "id_emisor": 2,
+  "id_emisor": 3,
   "contenido": "prueba de mensaje privado"
 }
 
@@ -21,7 +21,7 @@ Content-Type: application/json
 }
 
 ###
-GET {{uriMensaje}}/read/3
+POST {{uriMensaje}}/read/3
 Content-Type: application/json
 
 {

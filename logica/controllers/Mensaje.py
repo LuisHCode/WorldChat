@@ -117,7 +117,7 @@ async def crear_mensaje_privado(
 
 import base64
 
-@mensaje_router.get("/read/{id_receptor}")
+@mensaje_router.post("/read/{id_receptor}")
 async def leer_mensaje_privado(
     id_receptor: int,
     request: Request,
@@ -176,6 +176,7 @@ async def leer_mensaje_privado(
             mensajes.append(
                 {
                     "id_mensaje": row["id_mensaje"],
+                    "id_emisor": row["id_emisor"],
                     "emisor": row["emisor"],
                     "contenido": contenido_desencriptado,
                     "fecha_envio": fecha_envio,

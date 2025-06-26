@@ -13,17 +13,20 @@ from logica.app.encriptador import encriptar
 
 usuario_router = APIRouter(prefix="/api/usuario")
 
-@usuario_router.get("/contactos")
+
+@usuario_router.post("/contactos")
 async def usuario_read_contacts(
     request: Request, response: Response, db=Depends(s.obtener_conexion_sqlserver_dep)
 ):
     body = await request.json()
 
     # SQL con parámetros nombrados
-    sql = text("""
+    sql = text(
+        """
         EXEC sp_traerChatsPrivado 
             @id_usuario = :id_usuario
-    """)
+    """
+    )
 
     try:
         # Ejecutamos la consulta con el parámetro `id_usuario`
@@ -42,19 +45,23 @@ async def usuario_read_contacts(
             # Agregamos impresión de depuración para el contenido
             print(f"Tipo de contenido: {type(row['ultimo_mensaje'])}")
             print(f"Contenido (hex): {row['ultimo_mensaje'].hex()}")
-            
+
             try:
-                contenido_desencriptado = desencriptar_seguro(row["ultimo_mensaje"], DEFAULT_PASSPHRASE)
+                contenido_desencriptado = desencriptar_seguro(
+                    row["ultimo_mensaje"], DEFAULT_PASSPHRASE
+                )
                 # Si el contenido desencriptado es de tipo bytes, convertirlo a base64
                 if isinstance(contenido_desencriptado, bytes):
                     print("Contenido desencriptado (bytes), convirtiendo a base64...")
-                    contenido_desencriptado = base64.b64encode(contenido_desencriptado).decode('utf-8')
+                    contenido_desencriptado = base64.b64encode(
+                        contenido_desencriptado
+                    ).decode("utf-8")
 
             except Exception as e:
                 # Si ocurre un error al desencriptar, se marca como error en el contenido
                 contenido_desencriptado = "[error al desencriptar]"
 
-            row_dict['ultimo_mensaje'] = contenido_desencriptado
+            row_dict["ultimo_mensaje"] = contenido_desencriptado
             res.append(row_dict)
 
         return JSONResponse(content=res, status_code=status.HTTP_200_OK)
@@ -68,10 +75,13 @@ async def usuario_read_contacts(
         # Cualquier otro error inesperado
         raise HTTPException(status_code=500, detail="Error inesperado: " + str(e))
 
-@usuario_router.get("/read")
-def usuario_read(response: Response, db=Depends(s.obtener_conexion_sqlserver_dep)):
-    sql = text("SELECT * FROM Usuario")
-    result = db.execute(sql)
+
+@usuario_router.get("/read/{idUsuario}")
+async def usuario_read(
+    idUsuario: int, response: Response, db=Depends(s.obtener_conexion_sqlserver_dep)
+):
+    sql = text("SELECT * FROM Usuario WHERE id_usuario = :id_usuario")
+    result = db.execute(sql, {"id_usuario": idUsuario})
 
     res = []
     for row in result.mappings().all():
@@ -136,7 +146,9 @@ async def create_usuario(
 
     # Encriptar contraseña si viene
     if "contrasenna" in body and body["contrasenna"]:
-        body["contrasenna"] = encriptar(body["contrasenna"], )
+        body["contrasenna"] = encriptar(
+            body["contrasenna"],
+        )
 
     # Asignar valores por defecto si no vienen
     body.setdefault("estado", "Activo")

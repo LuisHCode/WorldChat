@@ -304,6 +304,7 @@ BEGIN
 
         SELECT 
             m.id_mensaje,
+            m.id_emisor,
             u.nombre_usuario AS emisor,
             m.contenido,
             m.fecha_envio,
